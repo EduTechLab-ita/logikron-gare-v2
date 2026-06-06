@@ -5,11 +5,19 @@
  * Modificare qui per cambiare anno scolastico o agganciare altre scuole.
  */
 
+// Anno scolastico calcolato automaticamente dalla data di sistema.
+// Regola: mese >= settembre → anno/anno+1 | mese < settembre → anno-1/anno
+// Es: giugno 2026 → "2025-2026" | settembre 2026 → "2026-2027"
+const _lkAnno = (function() {
+  var d = new Date(), y = d.getFullYear(), m = d.getMonth() + 1;
+  return m >= 9 ? (y + '-' + (y + 1)) : ((y - 1) + '-' + y);
+})();
+
 const LOGIKRON_CONFIG = {
   // ==========================================
-  // ANNO SCOLASTICO CORRENTE
+  // ANNO SCOLASTICO CORRENTE (calcolato automaticamente)
   // ==========================================
-  annoScolastico: '2025-2026',
+  annoScolastico: _lkAnno,
 
   // ==========================================
   // FASE ATTIVA (cambiare per aprire/chiudere le fasi)
