@@ -916,8 +916,10 @@
           <button onclick="toggleInfo('info-emergenze')" style="background:none;border:1px solid var(--lk-border);border-radius:6px;padding:2px 8px;font-size:0.75rem;cursor:pointer;color:var(--lk-text-muted);margin-left:8px;">ℹ️</button>
         </h3>
         <div class="info-panel" id="info-emergenze">
-          <strong>🔁 Sostituzione Docente</strong> — aggiorna nome e/o email in tutte le righe di Intenzioni + Iscrizioni in un colpo solo (invece di modificarle a mano su Sheets).<br>
-          <strong>⏰ Iscrizione Tardiva</strong> — aggiunge un docente/classe non iscritto entro la scadenza: crea le righe in Iscrizioni e le squadre nella gara selezionata con codici pronti da consegnare.
+          <strong>🔁 Sostituzione Docente</strong> — aggiorna nome e/o email in tutte le righe di Intenzioni + Iscrizioni in un colpo solo.<br>
+          <strong>⏰ Iscrizione Tardiva</strong> — aggiunge un docente/classe non iscritto entro la scadenza: crea le righe in Iscrizioni e le squadre nella gara selezionata.<br>
+          <strong>💾 Backup D1 → Sheets</strong> — copia tutti i dati dal database Cloudflare nei fogli D1_* dello Sheet Master (sovrascrive il backup precedente).<br>
+          <strong>🔄 Ripristina D1 da Sheets</strong> — reinserisce in D1 i dati salvati nel backup. Solo per emergenze reali: sovrascrive tutto il database.
         </div>
 
         <!-- SUB-ACCORDION: Sostituzione Docente -->
@@ -1001,6 +1003,35 @@
             </div>
             <button onclick="eseguiIscrizioneTardiva()" class="btn" style="background:linear-gradient(135deg,#f59e0b,#d97706);border:none;color:white;padding:8px 20px;border-radius:8px;cursor:pointer;font-weight:600;">⏰ Crea Iscrizione + Squadre</button>
             <div id="itRisultato" style="margin-top:0.7rem;font-size:0.85rem;display:none;"></div>
+          </div>
+        </div>
+
+        <!-- SUB-ACCORDION: Backup D1 → Sheets -->
+        <div class="stat-accordion-item" id="accBackup" style="margin-top:0.7rem;">
+          <div class="stat-accordion-header" onclick="toggleEmergenzaAcc('accBackup')">
+            <span>💾 Backup D1 → Sheets</span>
+            <span class="stat-accordion-arrow">▶</span>
+          </div>
+          <div class="stat-accordion-body" style="padding:1rem;">
+            <p style="font-size:0.85rem;color:var(--lk-text-muted);margin:0 0 0.8rem 0;">Copia tutti i dati dal database Cloudflare (D1) nei fogli <strong>D1_Gare, D1_Squadre, D1_Domande, D1_Risposte, D1_Iscrizioni, D1_Intenzioni, D1_Config</strong> nello Sheet Master. Sovrascrive il backup precedente. Operazione sicura, non modifica il database online.</p>
+            <button onclick="eseguiBackupD1()" class="btn" style="background:linear-gradient(135deg,#10b981,#059669);border:none;color:white;padding:8px 20px;border-radius:8px;cursor:pointer;font-weight:600;">💾 Esegui Backup ora</button>
+            <div id="backupRisultato" style="margin-top:0.7rem;font-size:0.85rem;display:none;"></div>
+          </div>
+        </div>
+
+        <!-- SUB-ACCORDION: Ripristina D1 da Sheets -->
+        <div class="stat-accordion-item" id="accRipristina" style="margin-top:0.7rem;">
+          <div class="stat-accordion-header" onclick="toggleEmergenzaAcc('accRipristina')">
+            <span>🔄 Ripristina D1 da Sheets</span>
+            <span class="stat-accordion-arrow">▶</span>
+          </div>
+          <div class="stat-accordion-body" style="padding:1rem;">
+            <div style="background:#7f1d1d;border:1px solid #dc2626;border-radius:8px;padding:0.8rem;margin-bottom:0.8rem;">
+              <strong style="color:#fca5a5;">⚠️ SOLO PER EMERGENZE</strong>
+              <p style="color:#fca5a5;font-size:0.85rem;margin:0.4rem 0 0 0;">Sovrascrive <strong>tutto il database D1</strong> con i dati dell'ultimo backup su Sheets. Usare solo in caso di perdita dati o corruzione del DB. Richiede doppia conferma. Non annullabile.</p>
+            </div>
+            <button onclick="confermaRipristinaD1()" class="btn" style="background:linear-gradient(135deg,#dc2626,#b91c1c);border:none;color:white;padding:8px 20px;border-radius:8px;cursor:pointer;font-weight:600;">🔄 Ripristina da Sheets</button>
+            <div id="ripristinaRisultato" style="margin-top:0.7rem;font-size:0.85rem;display:none;"></div>
           </div>
         </div>
       </section>
@@ -4187,6 +4218,36 @@
           div.innerHTML = html;
         })
         .catch(function(e) { div.style.display = 'block'; div.style.color = '#f87171'; div.textContent = '❌ Errore: ' + e.message; });
+    }
+
+    function eseguiBackupD1() {
+      const div = document.getElementById('backupRisultato');
+      div.style.display = 'block';
+      div.style.color = '#94a3b8';
+      div.textContent = '⏳ Backup in corso (30-60 secondi)...';
+      lkApi(API_AS, { action: 'syncD1ToSheets', pwd: adminPwd })
+        .then(function(r) {
+          if (r.error) { div.style.color = '#f87171'; div.textContent = '❌ ' + r.error; return; }
+          div.style.color = '#86efac';
+          div.textContent = '✅ Backup completato: ' + r.righeBackuppate + ' righe salvate su Sheets (' + (r.eseguito || '').substring(0,19).replace('T',' ') + ')';
+        })
+        .catch(function() { div.style.color = '#f87171'; div.textContent = '❌ Errore di rete.'; });
+    }
+
+    function confermaRipristinaD1() {
+      if (!confirm('⚠️ ATTENZIONE\n\nStai per sovrascrivere TUTTO il database D1 con i dati dell\'ultimo backup su Sheets.\n\nSei sicuro?')) return;
+      if (!confirm('Seconda conferma richiesta.\n\nQuesto eliminerà tutti i dati attuali online. Continuare?')) return;
+      const div = document.getElementById('ripristinaRisultato');
+      div.style.display = 'block';
+      div.style.color = '#94a3b8';
+      div.textContent = '⏳ Ripristino in corso (60-120 secondi)...';
+      lkApi(API_AS, { action: 'ripristinaD1DaSheets', pwd: adminPwd })
+        .then(function(r) {
+          if (r.error) { div.style.color = '#f87171'; div.textContent = '❌ ' + r.error; return; }
+          div.style.color = '#86efac';
+          div.textContent = '✅ Ripristino completato: ' + (r.righeRipristinate || 0) + ' righe reinserite in D1.';
+        })
+        .catch(function() { div.style.color = '#f87171'; div.textContent = '❌ Errore di rete.'; });
     }
 
   </script>
