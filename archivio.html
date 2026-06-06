@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LogiKron - Archivio Gare</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <meta name="theme-color" content="#4f46e5">
+  <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js');navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.type==='SW_UPDATED')location.reload();});}</script>
+  <style>
+    .gara-card {
+      margin-bottom: 1rem;
+    }
+    .gara-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .gara-meta {
+      font-size: 0.85rem;
+      color: var(--lk-text-muted);
+    }
+    .gara-badge {
+      background: #d1fae5;
+      color: #065f46;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 2px 10px;
+      border-radius: 9999px;
+    }
+    .classifica-container {
+      margin-top: 1rem;
+      display: none;
+    }
+    .classifica-container.aperta {
+      display: block;
+    }
+    .classifica-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    .classifica-table th {
+      background: #4f46e5;
+      color: white;
+      padding: 0.4rem 0.75rem;
+      text-align: left;
+      font-weight: 600;
+    }
+    .classifica-table td {
+      padding: 0.4rem 0.75rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .classifica-table tr:nth-child(even) td {
+      background: #f8fafc;
+    }
+    .pos-1 { background: #fef3c7 !important; font-weight: 700; }
+    .pos-2 { background: #f1f5f9 !important; font-weight: 600; }
+    .pos-3 { background: #fef9ec !important; font-weight: 600; }
+    .pos-medal { font-size: 1.1rem; }
+    .btn-classifica {
+      padding: 4px 14px;
+      font-size: 0.8rem;
+    }
+    .loading-spinner {
+      text-align: center;
+      padding: 1rem;
+      color: var(--lk-text-muted);
+      font-size: 0.9rem;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 2rem;
+      color: var(--lk-text-muted);
+    }
+    .empty-state .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- HEADER -->
+    <header class="text-center">
+      <div class="logo-container" style="font-size: 2rem;">
+        <span class="logo-l">L</span>
+        <span class="logo-o1">o</span>
+        <span class="logo-g">g</span>
+        <span class="logo-sand">&#8987;</span>
+        <span class="logo-k">K</span>
+        <span class="logo-r">r</span>
+        <span class="logo-o2">o</span>
+        <span class="logo-n">n</span>
+      </div>
+      <h1 style="font-size: 1.25rem; color: var(--lk-primary);">
+        Archivio Gare
+      </h1>
+      <p class="text-muted">Risultati e classifiche finali delle gare disputate</p>
+    </header>
+
+    <!-- LISTA GARE -->
+    <div id="listaGare" class="mt-3">
+      <div class="loading-spinner">Caricamento gare in corso...</div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <p>
+        <a href="index.html">Torna alla Home</a>
+      </p>
+      <p style="font-size: 0.75rem; margin-top: 0.5rem;">
+        <strong>LogiKron</strong> - Giochi Matematici di Interistituto |
+        <a href="https://edutechlab.it" target="_blank">EduTechLab</a> |
+        Powered by Vibe Coding - Fabio Rizzotto
+      </p>
+    </footer>
+
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/math-bg.js"></script>
+  <script>
+    const API_URL = LOGIKRON_CONFIG.apiUrl;
+
+    function medaglia(pos) {
+      if (pos === 1) return '<strong>1</strong> <span class="pos-medal">🥇</span>';
+      if (pos === 2) return '<strong>2</strong> <span class="pos-medal">🥈</span>';
+      if (pos === 3) return '<strong>3</strong> <span class="pos-medal">🥉</span>';
+      return '<strong>' + pos + '</strong>º';
+    }
+
+    function formatData(dataStr) {
+      if (!dataStr) return '-';
+      // dataStr può essere una data ISO o una stringa YYYY-MM-DD
+      const d = new Date(dataStr);
+      if (isNaN(d)) return dataStr;
+      return d.toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
+    }
+
+    function toggleClassifica(garaId, btn) {
+      const container = document.getElementById('classifica-' + garaId);
+      const aperta = container.classList.contains('aperta');
+
+      if (aperta) {
+        container.classList.remove('aperta');
+        btn.textContent = 'Vedi Classifica';
+        return;
+      }
+
+      // Prima apertura: carica i dati
+      if (!container.dataset.caricata) {
+        container.innerHTML = '<div class="loading-spinner">Caricamento classifica...</div>';
+        container.classList.add('aperta');
+        btn.textContent = 'Nascondi';
+
+        lkApi(API_URL, { action: 'getTabellone', garaId: garaId })
+          .then(data => {
+            if (data.error) throw new Error(data.error);
+            renderClassifica(container, data);
+            container.dataset.caricata = '1';
+          })
+          .catch(err => {
+            container.innerHTML = '<p style="color:#dc2626; padding:0.5rem;">Errore: ' + err.message + '</p>';
+          });
+      } else {
+        container.classList.add('aperta');
+        btn.textContent = 'Nascondi';
+      }
+    }
+
+    function renderClassifica(container, data) {
+      const squadre = data.squadre || [];
+      const griglia  = data.griglia  || {};
+      const domande  = data.domande  || [];
+      const numDom   = domande.length || 10;
+
+      if (squadre.length === 0) {
+        container.innerHTML = '<p class="text-muted" style="padding:0.5rem;">Nessuna squadra registrata.</p>';
+        return;
+      }
+
+      let html = '<div style="overflow-x:auto;"><table class="classifica-table"><thead><tr>';
+      html += '<th style="width:3rem;">Pos.</th>';
+      html += '<th>Squadra</th>';
+      html += '<th>Istituto</th>';
+      html += '<th style="text-align:right; min-width:60px;">Punti</th>';
+      for (let n = 1; n <= numDom; n++) {
+        const dom = domande[n - 1];
+        const base = dom && (dom.valore || dom.puntiBase) ? (dom.valore || dom.puntiBase) : '';
+        html += '<th style="text-align:center; min-width:48px; font-size:0.78rem; padding:0.3rem 0.2rem;">';
+        html += 'D.' + n;
+        if (base) html += '<br><span style="font-weight:400; opacity:0.75; font-size:0.7rem;">' + base + '</span>';
+        html += '</th>';
+      }
+      html += '</tr></thead><tbody>';
+
+      squadre.forEach((sq, idx) => {
+        const pos = idx + 1;
+        const rowClass = pos <= 3 ? ' class="pos-' + pos + '"' : '';
+        const sqGriglia = griglia[sq.id] || {};
+
+        html += '<tr' + rowClass + '>';
+        html += '<td style="text-align:center;">' + medaglia(pos) + '</td>';
+        html += '<td style="white-space:nowrap;">' + (sq.nome || '-') + '</td>';
+        html += '<td style="font-size:0.8rem; color:var(--lk-text-muted); white-space:nowrap;">' + (sq.ic || '-') + '</td>';
+        html += '<td style="text-align:right; font-weight:700; color:#4f46e5; font-size:1rem;">' + (sq.punti || 0) + '</td>';
+
+        for (let n = 1; n <= numDom; n++) {
+          const r = sqGriglia[n];
+          const isJolly = sq.jolly == n;
+          const esito = r ? r.esito : null;
+          const pts = r && r.punti !== undefined ? r.punti : null;
+
+          let bg, textCol;
+          if (esito === 'corretta')   { bg = '#22c55e'; textCol = 'white'; }
+          else if (esito === 'sbagliata') { bg = '#ef4444'; textCol = 'white'; }
+          else                         { bg = '#e2e8f0'; textCol = '#94a3b8'; }
+
+          const jollyStyle = isJolly
+            ? 'box-shadow:0 0 0 3px #f59e0b;'
+            : '';
+
+          const ptsText = pts !== null ? pts : (esito ? '?' : '—');
+
+          html += '<td style="text-align:center; padding:0.2rem;">';
+          html += '<div style="display:inline-flex;flex-direction:column;align-items:center;justify-content:center;'
+                + 'width:44px;height:40px;border-radius:8px;background:' + bg + ';color:' + textCol + ';'
+                + 'font-weight:700;font-size:0.9rem;' + jollyStyle + '">';
+          html += ptsText;
+          if (isJolly) html += '<span style="font-size:7px;line-height:1;margin-top:1px;opacity:0.9;">JOLLY</span>';
+          html += '</div>';
+          html += '</td>';
+        }
+
+        html += '</tr>';
+      });
+
+      html += '</tbody></table></div>';
+      html += '<div style="margin-top:0.5rem;font-size:0.75rem;color:var(--lk-text-muted);display:flex;gap:1rem;flex-wrap:wrap;">';
+      html += '<span><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:#22c55e;vertical-align:middle;"></span> Corretta</span>';
+      html += '<span><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:#ef4444;vertical-align:middle;"></span> Sbagliata</span>';
+      html += '<span><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:#e2e8f0;vertical-align:middle;"></span> Non risposta</span>';
+      html += '<span><span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:#94a3b8;vertical-align:middle;box-shadow:0 0 0 3px #f59e0b;"></span> Jolly</span>';
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    function renderListaGare(gare) {
+      const concluse = gare.filter(g => g.stato === 'conclusa');
+
+      if (concluse.length === 0) {
+        document.getElementById('listaGare').innerHTML = `
+          <div class="card empty-state">
+            <div class="empty-icon">🏁</div>
+            <p style="font-weight:600;">Nessuna gara ancora conclusa</p>
+            <p style="font-size:0.85rem;">Le classifiche appariranno qui al termine di ogni gara.</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Ordina per data effettiva decrescente (più recenti prima)
+      // usa oraFine (più precisa), poi dataGara, poi data come fallback
+      concluse.sort((a, b) => {
+        const ta = new Date(b.oraFine || b.dataGara || b.data || 0).getTime();
+        const tb = new Date(a.oraFine || a.dataGara || a.data || 0).getTime();
+        return ta - tb;
+      });
+
+      let html = '';
+      concluse.forEach(gara => {
+        html += `
+          <div class="card gara-card">
+            <div class="gara-header">
+              <div>
+                <strong style="font-size:1rem;">${gara.nome}</strong>
+                <div class="gara-meta">${formatData(gara.data)} &bull; ${gara.numDomande} quesiti &bull; ${gara.durata} min</div>
+              </div>
+              <div style="display:flex; align-items:center; gap:0.75rem;">
+                <span class="gara-badge">Conclusa</span>
+                <button class="btn btn-outline btn-classifica"
+                        onclick="toggleClassifica('${gara.id}', this)">
+                  Vedi Classifica
+                </button>
+              </div>
+            </div>
+            <div id="classifica-${gara.id}" class="classifica-container"></div>
+          </div>
+        `;
+      });
+
+      document.getElementById('listaGare').innerHTML = html;
+    }
+
+    // Carica lista gare
+    lkApi(API_URL, { action: 'getListaGare' })
+      .then(gare => {
+        if (!Array.isArray(gare)) throw new Error(gare.error || 'Risposta non valida');
+        renderListaGare(gare);
+      })
+      .catch(() => {
+        document.getElementById('listaGare').innerHTML = `
+          <div class="card empty-state">
+            <div class="empty-icon">🏁</div>
+            <p style="font-weight:600;">Nessuna gara disponibile</p>
+            <p style="font-size:0.85rem;">Le classifiche appariranno qui al termine di ogni gara.</p>
+          </div>
+        `;
+      });
+  </script>
+</body>
+</html>

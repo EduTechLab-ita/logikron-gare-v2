@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LogiKron - Tabellone Live</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <meta name="theme-color" content="#4f46e5">
+  <script>if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');</script>
+  <script src="./js/confetti.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      background: linear-gradient(135deg, #1e1b4b, #312e81);
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ===== HEADER COMPATTO: timer SX | titolo CENTRO | timer gara DX ===== */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 1.2rem;
+      color: white;
+    }
+
+    .top-left {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      min-width: 200px;
+    }
+
+    .top-center {
+      text-align: center;
+      flex: 1;
+    }
+
+    .top-center .logo-container {
+      font-size: 1.4rem;
+      margin: 0;
+    }
+
+    .top-center h1 {
+      font-size: 1.2rem;
+      margin: 0.1rem 0 0 0;
+      font-weight: 600;
+    }
+
+    .top-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      min-width: 200px;
+    }
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: #ef4444;
+      color: white;
+      padding: 2px 10px;
+      border-radius: 9999px;
+      font-size: 0.7rem;
+      font-weight: bold;
+      animation: pulse 2s infinite;
+      margin-bottom: 0.2rem;
+    }
+
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      background: white;
+      border-radius: 50%;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    @keyframes shimmer {
+      0%   { background-position: -200% 0; }
+      100% { background-position:  200% 0; }
+    }
+    @keyframes slideUp {
+      from { transform: translateY(50px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    @keyframes dropIn {
+      from { transform: translateY(-100px) scale(0.7); opacity: 0; }
+      to   { transform: translateY(0) scale(1);        opacity: 1; }
+    }
+    @keyframes slideFromLeft {
+      from { transform: translateX(-100px); opacity: 0; }
+      to   { transform: translateX(0);      opacity: 1; }
+    }
+    @keyframes slideFromRight {
+      from { transform: translateX(100px); opacity: 0; }
+      to   { transform: translateX(0);     opacity: 1; }
+    }
+
+    /* ===== CERIMONIA ANIMAZIONI ===== */
+    @keyframes slideUp {
+      from { transform: translateY(60px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    @keyframes dropIn {
+      from { transform: translateY(-120px) scale(0.7); opacity: 0; }
+      to   { transform: translateY(0) scale(1);        opacity: 1; }
+    }
+    @keyframes slideLeft {
+      from { transform: translateX(120px); opacity: 0; }
+      to   { transform: translateX(0);     opacity: 1; }
+    }
+    @keyframes slideRight {
+      from { transform: translateX(-120px); opacity: 0; }
+      to   { transform: translateX(0);      opacity: 1; }
+    }
+    @keyframes scaleIn {
+      from { transform: scale(0.3); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+    @keyframes shimmer {
+      0%   { background-position: -200% 0; }
+      100% { background-position:  200% 0; }
+    }
+
+    .cer-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      z-index: 200;
+      overflow: hidden;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    /* Fase 0: attesa risultati */
+    .cer-attesa-titolo {
+      font-size: clamp(2.5rem, 8vw, 5rem);
+      font-weight: 900;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.5rem;
+      background: linear-gradient(90deg, #fbbf24, #f59e0b, #fcd34d, #f59e0b, #fbbf24);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer 3s linear infinite;
+    }
+    .cer-attesa-sub {
+      font-size: clamp(1rem, 3vw, 1.6rem);
+      opacity: 0.8;
+      margin-bottom: 2rem;
+    }
+    .cer-dots { display: flex; gap: 0.75rem; justify-content: center; }
+    .cer-dot {
+      width: 16px; height: 16px; border-radius: 50%; background: rgba(255,255,255,0.4);
+      animation: pulse 1.4s infinite;
+    }
+    .cer-dot:nth-child(2) { animation-delay: 0.2s; }
+    .cer-dot:nth-child(3) { animation-delay: 0.4s; }
+
+    /* Fase 1: classifica parziale */
+    .cer-classifica-titolo {
+      font-size: clamp(1.5rem, 5vw, 2.8rem);
+      font-weight: 900;
+      margin-bottom: 1.5rem;
+      color: #fcd34d;
+    }
+    .cer-teams-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      width: 100%;
+      max-width: 700px;
+      overflow-y: auto;
+      max-height: calc(100vh - 200px);
+    }
+    .cer-team-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 0.7rem 1.2rem;
+      animation: slideUp 0.5s ease-out both;
+      opacity: 0;
+    }
+    .cer-pos-badge {
+      font-size: 1.4rem;
+      font-weight: 900;
+      width: 2.2rem;
+      text-align: center;
+      color: rgba(255,255,255,0.5);
+    }
+    .cer-team-nome {
+      flex: 1;
+      font-size: clamp(1rem, 2.5vw, 1.3rem);
+      font-weight: 700;
+      text-align: left;
+    }
+    .cer-team-pts {
+      font-size: clamp(1rem, 2.5vw, 1.3rem);
+      font-weight: 900;
+      color: #fcd34d;
+    }
+
+    /* Fase 2: podio */
+    .cer-podio-wrap {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: clamp(1rem, 4vw, 3rem);
+      padding-bottom: 3rem;
+    }
+    .podio-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      opacity: 0;
+    }
+    .podio-medal {
+      font-size: clamp(2rem, 6vw, 4rem);
+      line-height: 1;
+      margin-bottom: 0.3rem;
+    }
+    .podio-nome {
+      font-weight: 900;
+      font-size: clamp(0.9rem, 2.5vw, 1.4rem);
+      margin-bottom: 0.2rem;
+    }
+    .podio-ic {
+      font-size: clamp(0.65rem, 1.5vw, 0.85rem);
+      opacity: 0.7;
+      margin-bottom: 0.5rem;
+    }
+    .podio-pts {
+      font-size: clamp(1rem, 3vw, 1.8rem);
+      font-weight: 900;
+      color: #fcd34d;
+      margin-bottom: 0.5rem;
+    }
+    .podio-base {
+      border-radius: 8px 8px 0 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
+      font-weight: 900;
+      color: rgba(0,0,0,0.5);
+    }
+    .podio-3rd .podio-base { width: clamp(80px,15vw,140px); height: clamp(60px,10vw,100px); background: #cd7f32; }
+    .podio-2nd .podio-base { width: clamp(90px,17vw,160px); height: clamp(90px,14vw,140px); background: #c0c0c0; }
+    .podio-1st .podio-base { width: clamp(100px,19vw,180px); height: clamp(120px,18vw,180px); background: #ffd700; }
+    .podio-titolo {
+      font-size: clamp(1.8rem, 6vw, 3.5rem);
+      font-weight: 900;
+      margin-bottom: 2rem;
+      color: #fcd34d;
+      text-shadow: 0 0 30px rgba(252,211,77,0.5);
+    }
+
+    .timer-big {
+      font-size: 3rem;
+      font-weight: bold;
+      font-family: 'Courier New', monospace;
+      color: #fcd34d;
+      text-shadow: 0 0 20px rgba(252, 211, 77, 0.5);
+      line-height: 1;
+    }
+
+    /* Mini timers */
+    .mini-timer {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(255,255,255,0.1);
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      white-space: nowrap;
+    }
+
+    .mini-timer-label {
+      color: rgba(255,255,255,0.7);
+    }
+
+    .mini-timer-value {
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      font-size: 0.85rem;
+      color: #fcd34d;
+    }
+
+    .mini-timer-value.scaduto {
+      color: #6b7280;
+      text-decoration: line-through;
+      font-size: 0.7rem;
+    }
+
+    /* ===== TABELLONE ===== */
+    .tabellone-container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 0.75rem;
+      padding: 0.75rem;
+      margin: 0.4rem 0.6rem;
+      overflow-x: auto;
+    }
+
+    .tabellone table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 2px;
+    }
+
+    .tabellone th {
+      background: #4f46e5;
+      color: white;
+      padding: 0.4rem 0.3rem;
+      font-size: 1rem;
+      font-weight: 700;
+      border-radius: 6px 6px 0 0;
+    }
+
+    /* Riga valori punti */
+    .valore-row td {
+      background: #6366f1;
+      color: #fcd34d;
+      font-weight: bold;
+      font-size: 0.95rem;
+      padding: 0.2rem 0.3rem;
+      text-align: center;
+      border-radius: 0 0 6px 6px;
+    }
+
+    .valore-row td:first-child {
+      background: #4f46e5;
+      color: rgba(255,255,255,0.7);
+      font-size: 0.7rem;
+      font-weight: normal;
+    }
+
+    .valore-row td:last-child {
+      background: transparent;
+    }
+
+    /* Celle dati */
+    .tabellone td {
+      padding: 0.4rem 0.3rem;
+      text-align: center;
+      border-radius: 5px;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    /* Cella squadra */
+    .squadra-cell {
+      text-align: left !important;
+      background: #1e293b !important;
+      color: white !important;
+      white-space: nowrap;
+      font-weight: 700;
+      font-size: 1rem;
+      padding-left: 0.5rem !important;
+    }
+
+    /* Cella posizione (colonna # fissa) */
+    .pos-cell {
+      width: 40px !important;
+      min-width: 40px;
+      max-width: 40px;
+      padding: 0.3rem !important;
+    }
+
+    .pos-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      font-size: 0.9rem;
+      font-weight: 900;
+      color: white;
+    }
+
+    .pos-1 { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #1e1b4b; }
+    .pos-2 { background: linear-gradient(135deg, #9ca3af, #6b7280); }
+    .pos-3 { background: linear-gradient(135deg, #f97316, #ea580c); }
+    .pos-other { background: #475569; }
+
+    .cell-correct {
+      background: #10b981 !important;
+      color: white;
+    }
+
+    .cell-wrong {
+      background: #ef4444 !important;
+      color: white;
+    }
+
+    .cell-pending {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .cell-empty {
+      background: #f1f5f9;
+      color: #cbd5e1;
+      font-size: 0.9rem;
+    }
+
+    .punteggio-cell {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+      color: white !important;
+      font-size: 1.3rem;
+      font-weight: 900;
+      min-width: 65px;
+    }
+
+    /* Jolly "J" tag */
+    .cell-jolly {
+      position: relative;
+    }
+
+    .jolly-tag {
+      position: absolute;
+      top: 1px;
+      right: 2px;
+      background: #fbbf24;
+      color: #1e1b4b;
+      font-size: 0.55rem;
+      font-weight: 900;
+      width: 14px;
+      height: 14px;
+      line-height: 14px;
+      text-align: center;
+      border-radius: 3px;
+    }
+
+    /* Animazione riga */
+    .squadra-row {
+      transition: transform 0.5s ease;
+    }
+
+    /* Flash cella quesito quando cambia stato */
+    @keyframes cellPulse {
+      0%   { transform: scale(1);    box-shadow: none; filter: brightness(1); }
+      15%  { transform: scale(1.25); box-shadow: 0 0 0 4px rgba(255,255,255,1), 0 0 20px rgba(255,255,255,0.8); filter: brightness(1.6); }
+      30%  { transform: scale(1);    box-shadow: none; filter: brightness(1); }
+      45%  { transform: scale(1.2);  box-shadow: 0 0 0 4px rgba(255,255,255,0.9), 0 0 16px rgba(255,255,255,0.6); filter: brightness(1.5); }
+      60%  { transform: scale(1);    box-shadow: none; filter: brightness(1); }
+      75%  { transform: scale(1.15); box-shadow: 0 0 0 3px rgba(255,255,255,0.7); filter: brightness(1.3); }
+      100% { transform: scale(1);    box-shadow: none; filter: brightness(1); }
+    }
+    .cell-flash {
+      animation: cellPulse 0.55s ease-in-out 4;
+      z-index: 2;
+      position: relative;
+    }
+
+    /* Legenda */
+    .legenda {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.8rem;
+      margin-top: 0.5rem;
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+
+    .legenda-item {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .legenda-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+
+    /* Nascondimento ultimi 5 min */
+    .tabellone-nascosto {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 300px;
+      color: white;
+      text-align: center;
+    }
+
+    .tabellone-nascosto h2 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .tabellone-nascosto p {
+      font-size: 1.2rem;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ===== HEADER: timer SX | logo+titolo CENTRO | timer gara DX ===== -->
+  <div class="top-bar">
+    <div class="top-left">
+      <div class="mini-timer">
+        <span>&#127183;</span>
+        <span class="mini-timer-label">Jolly</span>
+        <span class="mini-timer-value" id="timerJolly">10:00</span>
+      </div>
+      <div class="mini-timer">
+        <span>&#10067;</span>
+        <span class="mini-timer-label">Domande</span>
+        <span class="mini-timer-value" id="timerDomande">20:00</span>
+      </div>
+    </div>
+
+    <div class="top-center">
+      <div class="logo-container" style="margin: 0;">
+        <span style="color: #93c5fd;">L</span><span style="color: #c4b5fd;">o</span><span style="color: #67e8f9;">g</span><span style="color: #fcd34d;">&#8987;</span><span style="color: #6ee7b7;">K</span><span style="color: #fcd34d;">r</span><span style="color: #fca5a5;">o</span><span style="color: #f9a8d4;">n</span>
+      </div>
+      <h1>Tabellone Live</h1>
+    </div>
+
+    <div class="top-right">
+      <span class="live-badge"><span class="live-dot"></span> LIVE</span>
+      <div class="timer-big" id="timerDisplay">60:00</div>
+    </div>
+  </div>
+
+  <!-- ===== TABELLONE ===== -->
+  <div class="tabellone-container" id="tabelloneVisibile">
+    <div class="tabellone">
+      <table id="tabelloneTable">
+        <thead>
+          <tr>
+            <th style="width: 40px;">#</th>
+            <th style="min-width: 130px;">Squadra</th>
+            <th>Q1</th><th>Q2</th><th>Q3</th><th>Q4</th><th>Q5</th>
+            <th>Q6</th><th>Q7</th><th>Q8</th><th>Q9</th><th>Q10</th>
+            <th style="min-width: 65px;">TOT</th>
+          </tr>
+          <tr class="valore-row">
+            <td></td>
+            <td>Valore</td>
+            <td id="val-1">20</td><td id="val-2">20</td><td id="val-3">20</td>
+            <td id="val-4">20</td><td id="val-5">20</td><td id="val-6">20</td>
+            <td id="val-7">20</td><td id="val-8">20</td><td id="val-9">20</td>
+            <td id="val-10">20</td>
+            <td></td>
+          </tr>
+        </thead>
+        <tbody id="tabelloneBody"></tbody>
+      </table>
+    </div>
+
+    <div class="legenda">
+      <div class="legenda-item"><span class="legenda-dot" style="background: #10b981;"></span> Corretta (+punti)</div>
+      <div class="legenda-item"><span class="legenda-dot" style="background: #ef4444;"></span> Sbagliata (-5 per tentativo, cumulativo)</div>
+      <div class="legenda-item"><span class="legenda-dot" style="background: #fef3c7; border: 1px solid #f59e0b;"></span> In attesa</div>
+      <div class="legenda-item"><span class="legenda-dot" style="background: #f1f5f9; border: 1px solid #e2e8f0;"></span> Non risposto</div>
+      <div class="legenda-item"><span class="legenda-dot" style="background: #fbbf24; color: #1e1b4b; font-weight: 900; font-size: 0.65rem; text-align: center; line-height: 14px;">J</span> Jolly (x2)</div>
+    </div>
+  </div>
+
+  <!-- OVERLAY ATTESA GARA -->
+  <div id="overlayAttesa" style="display:none; position:fixed; inset:0; background:rgba(30,27,75,0.97);
+       z-index:100; align-items:center; justify-content:center; flex-direction:column; color:white; text-align:center;">
+    <div style="font-size:4rem; margin-bottom:1rem;">⏳</div>
+    <h2 style="font-size:1.8rem; margin:0 0 0.5rem 0;">In attesa della gara...</h2>
+    <p style="opacity:0.7; margin:0 0 1.5rem 0;">Il tabellone si attiverà automaticamente all'avvio.</p>
+    <div class="live-badge"><span class="live-dot"></span> IN ATTESA</div>
+  </div>
+
+  <!-- NASCONDIMENTO ULTIMI 5 MIN -->
+  <div class="tabellone-nascosto" id="tabelloneNascosto" style="display: none;">
+    <div>
+      <h2>&#128064; Tabellone nascosto!</h2>
+      <p>La classifica finale sarà svelata al termine della gara.</p>
+      <div class="timer-big" id="timerFinale" style="margin-top: 1rem;"></div>
+    </div>
+  </div>
+
+  <!-- CERIMONIA 0: GARA TERMINATA — ATTESA -->
+  <div id="overlayCer0" style="display:none;position:fixed;inset:0;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);z-index:200;flex-direction:column;align-items:center;justify-content:center;color:white;text-align:center;padding:2rem;">
+    <div style="font-size:clamp(3rem,10vw,6rem);margin-bottom:0.5rem;">🏁</div>
+    <div id="cerTitoloGara" style="font-size:clamp(1.2rem,4vw,2rem);font-weight:700;margin-bottom:0.5rem;opacity:0.8;"></div>
+    <div style="font-size:clamp(2rem,7vw,4.5rem);font-weight:900;letter-spacing:-0.02em;margin-bottom:0.5rem;background:linear-gradient(90deg,#fbbf24,#f59e0b,#fcd34d,#f59e0b,#fbbf24);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 3s linear infinite;">Gara Terminata!</div>
+    <div style="font-size:clamp(1rem,3vw,1.5rem);opacity:0.75;margin-bottom:2rem;">Rimanete in attesa per i risultati...</div>
+    <div style="display:flex;gap:0.75rem;justify-content:center;">
+      <div style="width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,0.5);animation:pulse 1.4s infinite;"></div>
+      <div style="width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,0.5);animation:pulse 1.4s 0.2s infinite;"></div>
+      <div style="width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,0.5);animation:pulse 1.4s 0.4s infinite;"></div>
+    </div>
+  </div>
+
+  <!-- CERIMONIA 1: CLASSIFICA PARZIALE (dal last al 4°) -->
+  <div id="overlayCer1" style="display:none;position:fixed;inset:0;background:linear-gradient(135deg,#0f0c29,#302b63);z-index:200;flex-direction:column;align-items:center;justify-content:flex-start;color:white;padding:2rem;overflow-y:auto;">
+    <div style="font-size:clamp(1.5rem,5vw,2.8rem);font-weight:900;color:#fcd34d;margin-bottom:1.5rem;flex-shrink:0;">📊 Classifica</div>
+    <div id="cer1Teams" style="display:flex;flex-direction:column;gap:0.5rem;width:100%;max-width:700px;"></div>
+  </div>
+
+  <!-- CERIMONIA 2: PODIO -->
+  <div id="overlayCer2" style="display:none;position:fixed;inset:0;background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);z-index:200;flex-direction:column;align-items:center;justify-content:center;color:white;padding:2rem;">
+    <div style="font-size:clamp(1.8rem,6vw,3.5rem);font-weight:900;margin-bottom:2rem;color:#fcd34d;text-shadow:0 0 30px rgba(252,211,77,0.5);">🏆 Il Podio</div>
+    <div style="display:flex;align-items:flex-end;justify-content:center;gap:clamp(1rem,4vw,3rem);padding-bottom:2rem;">
+      <div id="podioCard3" style="opacity:0;display:flex;flex-direction:column;align-items:center;">
+        <div style="font-size:clamp(2rem,6vw,3.5rem);">🥉</div>
+        <div id="podioNome3" style="font-weight:900;font-size:clamp(0.85rem,2.5vw,1.3rem);margin-bottom:0.2rem;"></div>
+        <div id="podioIc3" style="font-size:clamp(0.65rem,1.5vw,0.8rem);opacity:0.7;margin-bottom:0.4rem;"></div>
+        <div id="podioPts3" style="font-size:clamp(1rem,3vw,1.6rem);font-weight:900;color:#fcd34d;margin-bottom:0.4rem;"></div>
+        <div style="width:clamp(80px,14vw,130px);height:clamp(60px,10vw,100px);background:#cd7f32;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;font-size:clamp(1.5rem,4vw,2.5rem);font-weight:900;color:rgba(0,0,0,0.4);">3</div>
+      </div>
+      <div id="podioCard1" style="opacity:0;display:flex;flex-direction:column;align-items:center;">
+        <div style="font-size:clamp(2.5rem,8vw,4.5rem);">🥇</div>
+        <div id="podioNome1" style="font-weight:900;font-size:clamp(0.95rem,3vw,1.5rem);margin-bottom:0.2rem;"></div>
+        <div id="podioIc1" style="font-size:clamp(0.65rem,1.5vw,0.8rem);opacity:0.7;margin-bottom:0.4rem;"></div>
+        <div id="podioPts1" style="font-size:clamp(1.2rem,3.5vw,1.9rem);font-weight:900;color:#fcd34d;margin-bottom:0.4rem;"></div>
+        <div style="width:clamp(100px,18vw,170px);height:clamp(110px,17vw,170px);background:#ffd700;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;font-size:clamp(1.8rem,5vw,3rem);font-weight:900;color:rgba(0,0,0,0.4);">1</div>
+      </div>
+      <div id="podioCard2" style="opacity:0;display:flex;flex-direction:column;align-items:center;">
+        <div style="font-size:clamp(2rem,6vw,3.5rem);">🥈</div>
+        <div id="podioNome2" style="font-weight:900;font-size:clamp(0.85rem,2.5vw,1.3rem);margin-bottom:0.2rem;"></div>
+        <div id="podioIc2" style="font-size:clamp(0.65rem,1.5vw,0.8rem);opacity:0.7;margin-bottom:0.4rem;"></div>
+        <div id="podioPts2" style="font-size:clamp(1rem,3vw,1.6rem);font-weight:900;color:#fcd34d;margin-bottom:0.4rem;"></div>
+        <div style="width:clamp(90px,16vw,150px);height:clamp(85px,13vw,130px);background:#c0c0c0;border-radius:8px 8px 0 0;display:flex;align-items:center;justify-content:center;font-size:clamp(1.5rem,4vw,2.5rem);font-weight:900;color:rgba(0,0,0,0.4);">2</div>
+      </div>
+    </div>
+  </div>
+
+  <footer style="text-align: center; color: rgba(255,255,255,0.4); font-size: 0.65rem; padding: 0.4rem;">
+    <strong>LogiKron</strong> - Giochi Matematici di Interistituto | <a href="https://edutechlab.it" target="_blank" style="color: rgba(255,255,255,0.5);">EduTechLab</a> | Powered by Vibe Coding - Fabio Rizzotto
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/math-bg.js"></script>
+  <script>
+    const API          = LOGIKRON_CONFIG.apiUrl;
+    const CFG          = LOGIKRON_CONFIG.gare;
+    const DURATA_MIN   = CFG.durataMinuti   || 60;
+    const JOLLY_MIN    = CFG.tempoJollyMinuti || 10;
+    let domaneMin      = CFG.tempoDomandeMinuti || 20; // aggiornato dal backend al primo poll
+    const INCREMENTO   = CFG.incrementoPuntiOgniMinuti || 2;
+    const PUNTI_BASE   = CFG.puntiIniziali  || 20;
+    let minNasc        = CFG.minutiNascondimento || 5; // aggiornato dal backend al primo poll
+
+    let garaId         = null;
+    let lastData       = null;
+    let secondiLocali  = 0;
+    const prevCelle      = {}; // sqId_n → esito, per rilevare cambiamenti e flash
+    const wasCorrectPunti = {}; // sqId_n → punti quando corretta (per tornare verde)
+    const tempRedUntil   = {}; // sqId_n → timestamp fine rosso temporaneo (10s)
+    const forceGreen     = {}; // sqId_n → true dopo i 10s (override sbagliata→verde)
+    let jollyDeadline  = null;
+    let domandeDeadline= null;
+    let timerInterval  = null;
+    let pollingInterval= null;
+    let _pollSeq       = 0; // anti-stale: ignora risposte fuori ordine
+    let attesaInterval = null;
+    let _cerimoniaRendered = -1; // evita di rilanciare animazioni già mostrate
+
+    // ==================== ATTESA GARA ====================
+
+    function mostraAttesa() {
+      document.getElementById('overlayAttesa').style.display = 'flex';
+      attesaInterval = setInterval(() => {
+        lkApi(API, { action: 'getGaraAttiva' })
+          .then(g => {
+            if (g && g.id) {
+              clearInterval(attesaInterval);
+              garaId = g.id;
+              document.getElementById('overlayAttesa').style.display = 'none';
+              avviaPolling();
+            }
+          }).catch(() => {});
+      }, 5000);
+    }
+
+    // ==================== POLLING TABELLONE ====================
+
+    function avviaPolling() {
+      aggiornaTabellone(); // subito
+      pollingInterval = setInterval(aggiornaTabellone, 5000);
+    }
+
+    function aggiornaTabellone() {
+      const mySeq = ++_pollSeq;
+      lkApi(API, { action: 'getTabellone', garaId: garaId })
+        .then(data => {
+          if (mySeq !== _pollSeq) return; // risposta stale (fuori ordine) → ignora
+          if (!data || data.error) return;
+          lastData = data;
+
+          // Aggiorna valori dinamici dal backend (sovrascrivono i default config.js)
+          if (data.minutiNascondimento) minNasc = parseInt(data.minutiNascondimento) || minNasc;
+          if (data.tempoDomande) domaneMin = parseInt(data.tempoDomande) || domaneMin;
+
+          // Sincronizza il timer locale col backend e aggiorna subito il display
+          secondiLocali = data.secondiRimanenti || 0;
+          const elTSync = document.getElementById('timerDisplay');
+          if (elTSync) {
+            elTSync.textContent = fmt(secondiLocali);
+            elTSync.style.color = secondiLocali <= 60 ? '#fca5a5' : '#fcd34d';
+          }
+
+          // Calcola deadline jolly e domande
+          if (data.gara && data.gara.oraFine) {
+            const tf = new Date(data.gara.oraFine).getTime();
+            const dur = parseInt(data.gara.durata) || DURATA_MIN;
+            const jolM = parseInt(data.gara.tempoJolly) || JOLLY_MIN;
+            jollyDeadline    = tf - (dur - jolM)       * 60000;
+            domandeDeadline  = tf - (dur - domaneMin)   * 60000;
+          }
+
+          // Aggiorna intestazione colonne e valori
+          aggiornaTestataDomande(data.domande || []);
+
+          // Render corpo tabellone
+          renderBody(data.squadre || [], data.griglia || {}, data.domande || []);
+
+          // Gestione stato gara
+          if (data.gara && data.gara.stato === 'conclusa') {
+            // Conclusa → overlay cerimonia ha priorità su tutto (non modificare display tabellone qui)
+            if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+            document.getElementById('timerDisplay').textContent = '00:00';
+            const cer = parseInt(data.gara.cerimonia) || 0;
+            aggiornaCerimonia(cer, data);
+          } else if (data.gara && data.gara.stato === 'preparazione') {
+            const elT = document.getElementById('timerDisplay');
+            if (elT) { elT.textContent = '⏳'; elT.style.color = '#fbbf24'; }
+            document.getElementById('tabelloneVisibile').style.display = '';
+            document.getElementById('tabelloneNascosto').style.display = 'none';
+          } else {
+            // Gara attiva → nascondimento normale
+            if (data.nascosto) {
+              document.getElementById('tabelloneVisibile').style.display = 'none';
+              document.getElementById('tabelloneNascosto').style.display = 'flex';
+            } else {
+              document.getElementById('tabelloneVisibile').style.display = '';
+              document.getElementById('tabelloneNascosto').style.display = 'none';
+            }
+            if (!timerInterval) timerInterval = setInterval(tickTimer, 1000);
+          }
+        }).catch(() => {});
+    }
+
+    // ==================== CERIMONIA ====================
+
+    function mostraSoloOverlay(id) {
+      ['overlayCer0','overlayCer1','overlayCer2',
+       'tabelloneVisibile','tabelloneNascosto'].forEach(function(el) {
+        const d = document.getElementById(el);
+        if (d) d.style.display = 'none';
+      });
+      const target = document.getElementById(id);
+      if (target) target.style.display = 'flex';
+    }
+
+    function aggiornaCerimonia(cer, data) {
+      if (cer === _cerimoniaRendered) return; // già mostrato
+
+      const squadre = data.squadre || [];
+      // Titolo gara nell'overlay 0
+      const nomeGara = data.gara && data.gara.nome ? data.gara.nome : '';
+      const el = document.getElementById('cerTitoloGara');
+      if (el) el.textContent = nomeGara;
+
+      if (cer === 0) {
+        mostraSoloOverlay('overlayCer0');
+      } else if (cer === 1) {
+        mostraSoloOverlay('overlayCer1');
+        renderCer1(squadre);
+      } else if (cer === 2) {
+        mostraSoloOverlay('overlayCer2');
+        renderCer2(squadre);
+      } else {
+        // cer >= 3: mostra tabellone completo
+        ['overlayCer0','overlayCer1','overlayCer2','tabelloneNascosto'].forEach(function(id) {
+          const d = document.getElementById(id);
+          if (d) d.style.display = 'none';
+        });
+        document.getElementById('tabelloneVisibile').style.display = '';
+      }
+      _cerimoniaRendered = cer;
+    }
+
+    function renderCer1(squadre) {
+      // Dal last al 4° (indice 3 in avanti), in ordine inverso (last → 4°)
+      const container = document.getElementById('cer1Teams');
+      if (!container) return;
+      container.innerHTML = '';
+      // squadre è già ordinata per punti decrescenti (pos 1 = indice 0)
+      // Mostriamo dal last al 4° (indice 3)
+      const partial = squadre.slice(3).reverse(); // dal last al 4°
+      if (partial.length === 0) {
+        container.innerHTML = '<p style="opacity:0.6;">Nessuna squadra oltre il podio</p>';
+        return;
+      }
+      partial.forEach(function(sq, i) {
+        const pos = squadre.indexOf(sq) + 1;
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:1rem;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:0.7rem 1.2rem;animation:slideUp 0.5s ease-out both;opacity:0;';
+        row.style.animationDelay = (i * 200) + 'ms';
+        row.innerHTML = '<span style="font-size:1.2rem;font-weight:900;width:2rem;text-align:center;color:rgba(255,255,255,0.4);">' + pos + '</span>' +
+          '<span style="flex:1;font-size:clamp(0.9rem,2.5vw,1.2rem);font-weight:700;">' + esc(sq.nome) + '</span>' +
+          '<span style="font-size:clamp(0.9rem,2.5vw,1.2rem);font-weight:900;color:#fcd34d;">' + sq.punti + ' pt</span>';
+        container.appendChild(row);
+      });
+    }
+
+    function renderCer2(squadre) {
+      if (squadre.length === 0) return;
+      function fillCard(rank, cardId, nomeId, icId, ptsId) {
+        const sq = squadre[rank - 1];
+        if (!sq) return;
+        document.getElementById(nomeId).textContent = sq.nome || '';
+        document.getElementById(icId).textContent = sq.ic || '';
+        document.getElementById(ptsId).textContent = sq.punti + ' pt';
+        // Animazione con delay
+        const delays = { 1: 4500, 2: 3000, 3: 1500 };
+        const anims  = { 1: 'dropIn', 2: 'slideFromRight', 3: 'slideFromLeft' };
+        setTimeout(function() {
+          const card = document.getElementById(cardId);
+          if (!card) return;
+          card.style.animation = anims[rank] + ' 0.7s cubic-bezier(0.34,1.56,0.64,1) both';
+          card.style.opacity = '1';
+          if (rank === 1) lanciaConfetti();
+        }, delays[rank]);
+      }
+      fillCard(1, 'podioCard1', 'podioNome1', 'podioIc1', 'podioPts1');
+      fillCard(2, 'podioCard2', 'podioNome2', 'podioIc2', 'podioPts2');
+      fillCard(3, 'podioCard3', 'podioNome3', 'podioIc3', 'podioPts3');
+    }
+
+    function lanciaConfetti() {
+      if (typeof confetti === 'undefined') {
+        // Fallback: ricarica il CDN dinamicamente e riprova tra 1s
+        var s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js';
+        s.onload = function() { setTimeout(lanciaConfetti, 100); };
+        document.head.appendChild(s);
+        return;
+      }
+      const colors = ['#ffd700', '#ff6b6b', '#4ecdc4', '#45b7d1', '#f9ca24', '#6ab04c', '#ffffff', '#f0e6ff'];
+      const zIdx = 1000; // sopra l'overlay podio (z-index: 200)
+      // Burst esplosivo iniziale dal centro
+      confetti({ particleCount: 200, spread: 120, origin: { x: 0.5, y: 0.5 }, colors: colors, scalar: 1.2, zIndex: zIdx });
+      // Secondo burst dopo 300ms
+      setTimeout(function() {
+        confetti({ particleCount: 150, spread: 100, origin: { x: 0.5, y: 0.4 }, colors: colors, zIndex: zIdx });
+      }, 300);
+      // Pioggia continua dai lati per 6 secondi
+      const end = Date.now() + 6000;
+      (function frame() {
+        confetti({ particleCount: 10, angle: 60,  spread: 60, origin: { x: 0 }, colors: colors, zIndex: zIdx });
+        confetti({ particleCount: 10, angle: 120, spread: 60, origin: { x: 1 }, colors: colors, zIndex: zIdx });
+        if (Date.now() < end) requestAnimationFrame(frame);
+      })();
+    }
+
+    // ==================== RENDER ====================
+
+    function aggiornaTestataDomande(domande) {
+      const n = domande.length;
+      if (n < 1) return;
+
+      // Ricostruisce thead dinamicamente in base al numero di domande
+      const thead = document.querySelector('#tabelloneTable thead');
+      let qTh = '';
+      let valTd = '';
+      for (let i = 1; i <= n; i++) {
+        qTh  += '<th>Q' + i + '</th>';
+        valTd += '<td id="val-' + i + '">20</td>';
+      }
+      thead.innerHTML =
+        '<tr>' +
+          '<th style="width:40px;">#</th>' +
+          '<th style="min-width:130px;">Squadra</th>' +
+          qTh +
+          '<th style="min-width:65px;">TOT</th>' +
+        '</tr>' +
+        '<tr class="valore-row">' +
+          '<td></td><td>Valore</td>' +
+          valTd +
+          '<td></td>' +
+        '</tr>';
+
+      // Aggiorna i valori correnti
+      domande.forEach(d => {
+        const el = document.getElementById('val-' + d.num);
+        if (el) el.textContent = d.valoreAttuale || d.puntiBase || PUNTI_BASE;
+      });
+    }
+
+    function renderBody(squadre, griglia, domande) {
+      const tbody = document.getElementById('tabelloneBody');
+      const numDom = domande.length || CFG.numeroDomande || 10;
+
+      // Mappa id→tr esistenti per DOM diffing (no flash)
+      const existingRows = {};
+      Array.from(tbody.querySelectorAll('tr[data-sq-id]')).forEach(function(tr) {
+        existingRows[tr.dataset.sqId] = tr;
+      });
+      const usedIds = new Set();
+
+      squadre.forEach(function(sq, index) {
+        const pos = index + 1;
+        const jollyNum = sq.jolly ? parseInt(sq.jolly) : null;
+        const posClass = pos === 1 ? 'pos-1' : pos === 2 ? 'pos-2' : pos === 3 ? 'pos-3' : 'pos-other';
+        const sqGriglia = griglia[sq.id] || {};
+        const sqId = String(sq.id);
+        usedIds.add(sqId);
+
+        let tr = existingRows[sqId];
+        if (!tr) {
+          tr = document.createElement('tr');
+          tr.className = 'squadra-row';
+          tr.dataset.sqId = sqId;
+        }
+
+        let html = '<td class="pos-cell"><span class="pos-num ' + posClass + '">' + pos + '</span></td>';
+        html += '<td class="squadra-cell">' + esc(sq.nome) + '</td>';
+
+        for (let n = 1; n <= numDom; n++) {
+          const r = sqGriglia[n];
+          const isJolly = (jollyNum === n);
+          const jTag = isJolly ? '<span class="jolly-tag">J</span>' : '';
+          const jCls = isJolly ? ' cell-jolly' : '';
+          if (!r) {
+            html += '<td class="cell-empty' + jCls + '" data-n="' + n + '">' + jTag + '–</td>';
+          } else {
+            const key = sqId + '_' + n;
+            const now = Date.now();
+            let displayEsito = r.esito;
+            let displayPunti = parseInt(r.punti) || 0;
+            if (r.esito === 'corretta') {
+              wasCorrectPunti[key] = displayPunti; // memorizza punti corretti
+              delete forceGreen[key];
+              delete tempRedUntil[key];
+            } else if (forceGreen[key]) {
+              displayEsito = 'corretta';
+              displayPunti = wasCorrectPunti[key] || 0;
+            } else if (tempRedUntil[key] && now >= tempRedUntil[key]) {
+              delete tempRedUntil[key];
+              forceGreen[key] = true;
+              displayEsito = 'corretta';
+              displayPunti = wasCorrectPunti[key] || 0;
+            }
+            if (displayEsito === 'corretta') {
+              html += '<td class="cell-correct' + jCls + '" data-n="' + n + '">' + jTag + '+' + displayPunti + '</td>';
+            } else {
+              html += '<td class="cell-wrong' + jCls + '" data-n="' + n + '">' + jTag + displayPunti + '</td>';
+            }
+          }
+        }
+
+        html += '<td class="punteggio-cell">' + (parseInt(sq.punti) || 0) + '</td>';
+
+        // Aggiorna solo se il contenuto è cambiato
+        if (tr.innerHTML !== html) {
+          tr.innerHTML = html;
+          // Flash sulle celle quesito che hanno cambiato stato
+          tr.querySelectorAll('td[data-n]').forEach(function(td) {
+            const n = td.dataset.n;
+            const key = sqId + '_' + n;
+            const r = sqGriglia[n];
+            const esito = r ? r.esito : '';
+            const esitoChanged = prevCelle[key] !== esito && (esito === 'corretta' || esito === 'sbagliata');
+            // Penalità su domanda già corretta: rosso 10s poi verde
+            const penalitaDopoCorretta = prevCelle[key] === 'corretta' && esito === 'sbagliata';
+            if (penalitaDopoCorretta) {
+              tempRedUntil[key] = Date.now() + 10000;
+              delete forceGreen[key];
+            }
+            if (esitoChanged || penalitaDopoCorretta) {
+              td.classList.remove('cell-flash');
+              void td.offsetWidth;
+              td.classList.add('cell-flash');
+              td.addEventListener('animationend', function() {
+                td.classList.remove('cell-flash');
+              }, { once: true });
+            }
+          });
+        }
+
+        // Aggiorna prevCelle per la prossima iterazione
+        for (let n = 1; n <= numDom; n++) {
+          prevCelle[sqId + '_' + n] = (sqGriglia[n] ? sqGriglia[n].esito : '');
+        }
+
+        // Aggiungi/riordina in fondo (mantiene ordine classifica)
+        tbody.appendChild(tr);
+      });
+
+      // Rimuovi righe di squadre non più presenti
+      Object.keys(existingRows).forEach(function(id) {
+        if (!usedIds.has(id)) tbody.removeChild(existingRows[id]);
+      });
+    }
+
+    // ==================== TIMER LOCALE ====================
+
+    function fmt(sec) {
+      const s = Math.max(0, Math.floor(sec));
+      return String(Math.floor(s / 60)).padStart(2,'0') + ':' + String(s % 60).padStart(2,'0');
+    }
+
+    function tickTimer() {
+      if (secondiLocali > 0) secondiLocali--;
+
+      // Timer principale (grande a DX)
+      const elT = document.getElementById('timerDisplay');
+      elT.textContent = fmt(secondiLocali);
+      elT.style.color = secondiLocali <= 60 ? '#fca5a5' : '#fcd34d';
+
+      // Timer nel pannello nascosto
+      const elF = document.getElementById('timerFinale');
+      if (elF) elF.textContent = fmt(secondiLocali);
+
+      // Valori domande (aggiornamento locale tra un polling e l'altro)
+      // Usa il puntiBase individuale di ogni domanda (già include penalità per risposte sbagliate)
+      if (lastData && lastData.gara && lastData.gara.oraInizio && lastData.domande) {
+        const secTrascorsi = Math.floor((Date.now() - new Date(lastData.gara.oraInizio).getTime()) / 1000);
+        const minTr = Math.floor(secTrascorsi / 60);
+        lastData.domande.forEach(function(d) {
+          const el = document.getElementById('val-' + d.num);
+          if (el) el.textContent = (parseInt(d.puntiBase) || PUNTI_BASE) + (minTr * INCREMENTO);
+        });
+      }
+
+      // Timer Jolly (SX)
+      const elJ = document.getElementById('timerJolly');
+      if (elJ && jollyDeadline) {
+        const secJ = Math.max(0, (jollyDeadline - Date.now()) / 1000);
+        if (secJ <= 0) { elJ.textContent = 'SCADUTO'; elJ.classList.add('scaduto'); }
+        else { elJ.textContent = fmt(secJ); elJ.classList.remove('scaduto'); }
+      }
+
+      // Timer Domande (SX)
+      const elD = document.getElementById('timerDomande');
+      if (elD && domandeDeadline) {
+        const secD = Math.max(0, (domandeDeadline - Date.now()) / 1000);
+        if (secD <= 0) { elD.textContent = 'SCADUTO'; elD.classList.add('scaduto'); }
+        else { elD.textContent = fmt(secD); elD.classList.remove('scaduto'); }
+      }
+
+      // Nascondimento locale (tra un polling e l'altro)
+      if (secondiLocali > 0 && secondiLocali <= minNasc * 60) {
+        document.getElementById('tabelloneVisibile').style.display = 'none';
+        document.getElementById('tabelloneNascosto').style.display = 'flex';
+      }
+    }
+
+    function esc(s) {
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // ==================== INIT ====================
+
+    // Se ?garaId= è presente nell'URL (link da admin), usa quello direttamente
+    const _urlGaraId = new URLSearchParams(window.location.search).get('garaId');
+    if (_urlGaraId) {
+      garaId = _urlGaraId;
+      avviaPolling();
+    } else {
+      // Comportamento pubblico: auto-discover gara attiva
+      lkApi(API, { action: 'getGaraAttiva' })
+        .then(g => {
+          if (g && g.id) { garaId = g.id; avviaPolling(); }
+          else mostraAttesa();
+        })
+        .catch(() => mostraAttesa());
+    }
+  </script>
+</body>
+</html>

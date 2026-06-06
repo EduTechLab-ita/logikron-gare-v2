@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LogiKron - Giochi Matematici di Interistituto</title>
+  <meta name="description" content="Piattaforma per le gare matematiche a squadre tra Istituti Comprensivi">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <meta name="theme-color" content="#4f46e5">
+  <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js');navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.type==='SW_UPDATED')location.reload();});}</script>
+  <style>
+    .home-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+    .home-grid .card { margin-bottom: 0; }
+    .home-full { grid-column: 1 / -1; }
+
+    /* Banner edizione precedente */
+    .banner-prev {
+      background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+      color: white !important;
+      border: none;
+      position: relative;
+      overflow: hidden;
+    }
+    .banner-prev::before { display: none; }
+    .banner-prev .card-title { color: white !important; }
+    .banner-prev .card-title::before { color: #fbbf24; }
+    .banner-prev .stat-num {
+      font-size: 2.2rem;
+      font-weight: 900;
+      line-height: 1;
+      margin-bottom: 0.2rem;
+    }
+    .banner-prev .stat-label {
+      font-size: 0.75rem;
+      opacity: 0.85;
+    }
+
+    /* Numeri anno corrente */
+    .stats-current .stat-num {
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--lk-primary);
+      line-height: 1;
+      margin-bottom: 0.2rem;
+    }
+    .stats-current .stat-label {
+      font-size: 0.75rem;
+      color: var(--lk-text-muted);
+    }
+
+    @media (max-width: 768px) {
+      .home-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- HEADER -->
+    <header class="text-center">
+      <div class="logo-container">
+        <span class="logo-l">L</span>
+        <span class="logo-o1">o</span>
+        <span class="logo-g">g</span>
+        <span class="logo-sand">&#8987;</span>
+        <span class="logo-k">K</span>
+        <span class="logo-r">r</span>
+        <span class="logo-o2">o</span>
+        <span class="logo-n">n</span>
+      </div>
+      <h1 class="mb-1" style="font-size: 1.5rem; color: var(--lk-primary);">
+        Giochi Matematici di Interistituto
+      </h1>
+      <p class="text-muted">Gare a squadre tra Istituti Comprensivi</p>
+    </header>
+
+    <div class="home-grid mt-3">
+
+      <!-- BANNER EDIZIONE PRECEDENTE (full width) -->
+      <section class="card banner-prev home-full">
+        <div class="card-header" style="border-bottom-color: rgba(255,255,255,0.2);">
+          <h2 class="card-title">Nelle edizioni precedenti</h2>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; text-align: center; padding: 0.5rem 0;">
+          <div>
+            <div class="stat-num" id="prevIstituti">6</div>
+            <div class="stat-label">Istituti Comprensivi</div>
+          </div>
+          <div>
+            <div class="stat-num" id="prevClassi">-</div>
+            <div class="stat-label">Classi coinvolte</div>
+          </div>
+          <div>
+            <div class="stat-num" id="prevSquadre">-</div>
+            <div class="stat-label">Squadre iscritte</div>
+          </div>
+          <div>
+            <div class="stat-num" id="prevAlunni">-</div>
+            <div class="stat-label">Alunni partecipanti</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- COLONNA SX: Cosa sono -->
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">Cosa sono i Giochi LogiKron?</h2>
+        </div>
+        <p class="mb-2">
+          I <strong>Giochi Matematici LogiKron</strong> sono gare a squadre che coinvolgono
+          le classi di diversi Istituti Comprensivi della zona.
+        </p>
+        <p class="mb-2">
+          Ogni squadra, composta da <strong>5-9 studenti</strong>, affronta una serie di
+          quesiti logico-matematici. Il punteggio varia in base alla velocita e alla
+          correttezza delle risposte.
+        </p>
+        <p>
+          L'obiettivo e promuovere il <strong>lavoro di squadra</strong> e l'interesse
+          per la matematica in modo divertente e stimolante.
+        </p>
+      </section>
+
+      <!-- COLONNA DX: Regolamento -->
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">Regolamento in breve</h2>
+        </div>
+        <ul style="padding-left: 1.5rem;">
+          <li class="mb-1"><strong>Squadre:</strong> da 5 a 9 studenti per squadra</li>
+          <li class="mb-1"><strong>Classi:</strong> primaria e secondaria di primo grado</li>
+          <li class="mb-1"><strong>Durata:</strong> 60 minuti</li>
+          <li class="mb-1"><strong>Quesiti:</strong> 10 problemi logico-matematici</li>
+          <li class="mb-1"><strong>Risposte:</strong> numeri interi da 0000 a 9999</li>
+          <li class="mb-1"><strong>Punteggio:</strong> cresce col passare del tempo, bonus per chi completa prima</li>
+          <li><strong>Jolly:</strong> una domanda a scelta con punteggio doppio</li>
+        </ul>
+        <div class="mt-2" style="text-align: right;">
+          <a href="regolamento.html" id="btnRegolamento" class="btn btn-outline" style="padding: 4px 14px; font-size: 0.8rem;" target="_blank">
+            Regolamento completo
+          </a>
+        </div>
+      </section>
+
+      <!-- COLONNA SX: Area Docenti -->
+      <section class="card" style="background: linear-gradient(135deg, #eff6ff, #f5f3ff);">
+        <div class="card-header">
+          <h2 class="card-title">Area Docenti</h2>
+        </div>
+        <p class="mb-2">
+          Sei un docente e vuoi partecipare con la tua classe? Segui questi passaggi:
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.75rem;">
+          <a href="intenzioni.html" id="btnStep1" class="btn btn-primary btn-lg btn-block"
+             style="opacity:0.4; pointer-events:none;">
+            1. Esprimi Intenzione
+          </a>
+          <a href="iscrizioni.html" id="btnStep2" class="btn btn-secondary btn-lg btn-block"
+             style="opacity:0.4; pointer-events:none;">
+            2. Iscrivi la Squadra
+          </a>
+        </div>
+        <p class="text-muted mt-2" style="font-size: 0.8rem;">
+          Gli step si attivano in sequenza. Completa il passaggio 1 per sbloccare il 2.
+        </p>
+      </section>
+
+      <!-- COLONNA DX: Durante la Gara -->
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">Durante la Gara</h2>
+        </div>
+        <p class="mb-2">
+          Il giorno della gara, usa questi strumenti:
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.75rem;">
+          <a href="gara.html" target="_blank" class="btn btn-success btn-lg btn-block">
+            Pannello Squadra
+          </a>
+          <a href="tabellone.html" target="_blank" class="btn btn-primary btn-lg btn-block">
+            Tabellone Live
+          </a>
+          <a href="archivio.html" target="_blank" class="btn btn-lg btn-block" style="margin-top: 0; background:#f59e0b; border-color:#f59e0b; color:white;">
+            Archivio Classifiche
+          </a>
+        </div>
+        <p class="text-muted mt-2" style="font-size: 0.8rem;">
+          Il tabellone mostra la classifica in tempo reale. L'archivio conserva i risultati di tutte le gare passate.
+        </p>
+      </section>
+
+      <!-- NUMERI EDIZIONE CORRENTE (full width) -->
+      <section class="card stats-current home-full">
+        <div class="card-header">
+          <h2 class="card-title">Iscrizioni dell'edizione in corso</h2>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; text-align: center; padding: 0.5rem 0;">
+          <div>
+            <div class="stat-num" id="numIstituti">0</div>
+            <div class="stat-label">Istituti iscritti</div>
+          </div>
+          <div>
+            <div class="stat-num" id="numClassi">0</div>
+            <div class="stat-label">Classi coinvolte</div>
+          </div>
+          <div>
+            <div class="stat-num" id="numSquadre">0</div>
+            <div class="stat-label">Squadre iscritte</div>
+          </div>
+          <div>
+            <div class="stat-num" id="numAlunni">0</div>
+            <div class="stat-label">Alunni partecipanti</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- SEZIONE GARE -->
+    <section class="mt-3">
+      <div class="card-header" style="margin-bottom:0.75rem;">
+        <h2 class="card-title" style="font-size:1.1rem;">🏆 Gare</h2>
+      </div>
+      <div id="sezioneGare">
+        <p style="color:var(--lk-text-muted); font-size:0.9rem;">Caricamento...</p>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <p>
+        <strong>LogiKron</strong> - Giochi Matematici di Interistituto<br>
+        <a href="https://edutechlab.it" target="_blank">EduTechLab</a> |
+        Powered by Vibe Coding - Fabio Rizzotto
+      </p>
+      <p style="margin-top: 0.75rem;">
+        <a href="admin.html" style="font-size: 0.75rem; opacity: 0.5;">Accesso Admin</a>
+      </p>
+    </footer>
+
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/math-bg.js"></script>
+  <script>
+    // Popola totali storici: fallback immediato da config.js, poi aggiorna dal backend
+    const storico = LOGIKRON_CONFIG.totaleStorico;
+    if (storico) {
+      document.getElementById('prevIstituti').textContent = storico.istituti || '-';
+      document.getElementById('prevClassi').textContent = storico.classi || '-';
+      document.getElementById('prevSquadre').textContent = storico.squadre || '-';
+      document.getElementById('prevAlunni').textContent = storico.alunni || '-';
+    }
+    setTimeout(function() {
+      lkApi(LOGIKRON_CONFIG.apiUrl, { action: 'getStoricoPublico' })
+        .then(function(s) {
+          if (s.edizioni > 0) {
+            document.getElementById('prevIstituti').textContent = s.istituti;
+            document.getElementById('prevClassi').textContent   = s.classi;
+            document.getElementById('prevSquadre').textContent  = s.squadre;
+            document.getElementById('prevAlunni').textContent   = s.alunni;
+          }
+        })
+        .catch(function() {});
+    }, 3000);
+
+    const btn1 = document.getElementById('btnStep1');
+    const btn2 = document.getElementById('btnStep2');
+
+    function disabilita(btn, testo) {
+      btn.style.opacity = '0.4';
+      btn.style.pointerEvents = 'none';
+      if (testo) btn.textContent = testo;
+    }
+
+    function abilita(btn) {
+      btn.style.opacity = '';
+      btn.style.pointerEvents = '';
+    }
+
+    function applicaFase(fase) {
+      if (fase === 1) {
+        abilita(btn1);
+        disabilita(btn2, '2. Iscrivi la Squadra (apre nella Fase 2)');
+      } else if (fase === 2) {
+        disabilita(btn1, '1. Fase Intenzioni conclusa');
+        abilita(btn2);
+      } else if (fase < 1) {
+        disabilita(btn1, '1. Esprimi Intenzione (non ancora aperta)');
+        disabilita(btn2, '2. Iscrivi la Squadra');
+      } else {
+        // fase >= 3
+        disabilita(btn1, '1. Fase Intenzioni conclusa');
+        disabilita(btn2, '2. Iscrizioni chiuse');
+      }
+    }
+
+    // Prima chiamata sveglia AS; le successive scaglionate per evitare cold-start multiplo
+    lkApi(LOGIKRON_CONFIG.apiUrl, { action: 'getFase' })
+      .then(r => applicaFase(r.fase))
+      .catch(() => applicaFase(LOGIKRON_CONFIG.faseAttiva));
+
+    // Contatori live edizione corrente (con ritardo per lasciar svegliare AS)
+    setTimeout(function() {
+      lkApi(LOGIKRON_CONFIG.apiUrl, { action: 'getStatIscrizioni' })
+        .then(function(s) {
+          document.getElementById('numIstituti').textContent = s.istituti > 0 ? s.istituti : '-';
+          document.getElementById('numClassi').textContent   = s.classi   > 0 ? s.classi   : '-';
+          document.getElementById('numSquadre').textContent  = s.squadre  > 0 ? s.squadre  : '-';
+          document.getElementById('numAlunni').textContent   = s.alunni   > 0 ? s.alunni   : '-';
+        })
+        .catch(function() {});
+    }, 1500);
+
+    // Carica lista gare pubblica (scaglionata per evitare cold-start multiplo)
+    setTimeout(function caricaGarePublic() {
+      const div = document.getElementById('sezioneGare');
+      lkApi(LOGIKRON_CONFIG.apiUrl, { action: 'getListaGare' })
+        .then(function(gare) {
+          if (!Array.isArray(gare) || gare.length === 0) {
+            div.innerHTML = '<p style="color:var(--lk-text-muted); font-size:0.9rem;">Nessuna gara programmata al momento.</p>';
+            return;
+          }
+          const stati = {
+            preparazione: { label: 'Programmata', bg: '#fef3c7', col: '#92400e' },
+            attiva:       { label: '🟢 IN CORSO', bg: '#d1fae5', col: '#065f46' },
+            conclusa:     { label: 'Conclusa',    bg: '#f1f5f9', col: '#64748b' }
+          };
+          // Mostra gare attive prima, poi preparazione, poi concluse
+          const ordine = { attiva: 0, preparazione: 1, conclusa: 2 };
+          gare.sort(function(a, b) {
+            return (ordine[a.stato] ?? 9) - (ordine[b.stato] ?? 9);
+          });
+          let html = '<div style="display:flex; flex-direction:column; gap:0.6rem;">';
+          gare.forEach(function(g) {
+            const s = stati[g.stato] || { label: g.stato, bg: '#f1f5f9', col: '#64748b' };
+            const dataDisplay = g.dataGara ? g.dataGara.replace('T', ' ').substring(0, 16) : g.data;
+            html += '<div style="display:flex; align-items:center; gap:0.75rem; padding:0.65rem 0.9rem; background:white; border:1px solid #e2e8f0; border-radius:10px; flex-wrap:wrap;">';
+            html += '<span style="display:inline-block; padding:2px 10px; border-radius:9999px; font-size:0.72rem; font-weight:700; background:' + s.bg + '; color:' + s.col + ';">' + s.label + '</span>';
+            html += '<span style="font-weight:600; font-size:0.9rem; flex:1; color:#1e293b;">' + _hesc(g.nome) + '</span>';
+            html += '<span style="font-size:0.78rem; color:#94a3b8;">' + dataDisplay + '</span>';
+            if (g.stato === 'attiva') {
+              html += '<a href="gara.html" target="_blank" class="btn btn-primary" style="padding:4px 14px; font-size:0.82rem;">Entra →</a>';
+            }
+            html += '</div>';
+          });
+          html += '</div>';
+          div.innerHTML = html;
+        })
+        .catch(function() {
+          div.innerHTML = '<p style="color:var(--lk-text-muted); font-size:0.9rem;">Impossibile caricare le gare.</p>';
+        });
+
+      function _hesc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    }, 2500);
+  </script>
+</body>
+</html>

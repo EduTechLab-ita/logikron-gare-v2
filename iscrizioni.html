@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LogiKron - Iscrizione Squadre</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <meta name="theme-color" content="#4f46e5">
+  <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js');navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.type==='SW_UPDATED')location.reload();});}</script>
+  <style>
+    .squadra-card {
+      background: #f5f3ff;
+      border: 2px solid #a5b4fc;
+      border-radius: var(--lk-radius-md);
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      position: relative;
+    }
+    .squadra-card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .squadra-numero {
+      background: #4f46e5;
+      color: white;
+      font-weight: 700;
+      font-size: 0.85rem;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .btn-rimuovi-squadra {
+      margin-left: auto;
+      background: none;
+      border: 1px solid #fca5a5;
+      color: #dc2626;
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .studenti-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .studente-row {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .studente-num {
+      font-size: 0.75rem;
+      color: #6b7280;
+      width: 18px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .studente-input {
+      flex: 1;
+      padding: 0.35rem 0.6rem;
+      font-size: 0.9rem;
+      border: 1px solid #c7d2fe;
+      border-radius: 8px;
+      font-family: inherit;
+      background: white;
+    }
+    .studente-input:focus {
+      outline: none;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 2px rgba(99,102,241,0.15);
+    }
+    .squadra-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .studenti-count {
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+    .studenti-count.ok { color: #059669; font-weight: 600; }
+    .studenti-count.warn { color: #dc2626; }
+    .btn-studente {
+      background: none;
+      border: 1px dashed #a5b4fc;
+      color: #4f46e5;
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    .btn-studente:disabled { opacity: 0.4; cursor: default; }
+    #btnAggiungiSquadra {
+      width: 100%;
+      margin-top: 0.25rem;
+      border: 2px dashed #a5b4fc;
+      background: transparent;
+      color: #4f46e5;
+      font-weight: 600;
+    }
+    @media (max-width: 480px) {
+      .studenti-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container container-md">
+
+    <!-- HEADER -->
+    <header class="text-center">
+      <div class="logo-container" style="font-size: 2rem;">
+        <span class="logo-l">L</span><span class="logo-o1">o</span><span class="logo-g">g</span>
+        <span class="logo-sand">&#8987;</span>
+        <span class="logo-k">K</span><span class="logo-r">r</span><span class="logo-o2">o</span><span class="logo-n">n</span>
+      </div>
+      <h1 style="font-size: 1.25rem; color: var(--lk-primary);">Iscrizione Squadre</h1>
+      <p class="text-muted">Giochi Matematici di Interistituto</p>
+    </header>
+
+    <!-- INFO -->
+    <div class="card mt-3" style="background: #d1fae5; border-left: 4px solid #10b981;">
+      <p style="margin: 0;">
+        <strong>Fase 2:</strong> Registra le tue squadre inserendo i nomi degli studenti.
+        Ogni squadra deve avere da <strong>5 a 9 componenti</strong>.
+        Puoi iscrivere più squadre in un solo invio.
+      </p>
+    </div>
+
+    <!-- LOADER (visibile subito, sostituito da form o messaggio errore) -->
+    <div class="card mt-2" id="loadingCard" style="text-align:center; padding: 2rem 1rem;">
+      <div style="font-size:2rem; margin-bottom:0.75rem;">⏳</div>
+      <p style="font-weight:600; color:var(--lk-primary); margin:0 0 0.25rem 0;">Caricamento modulo in corso...</p>
+      <p style="font-size:0.85rem; color:#6b7280; margin:0;">Attendi qualche secondo</p>
+    </div>
+
+    <!-- FORM (nascosto di default, mostrato solo se fase = 2) -->
+    <form id="formIscrizioni" novalidate style="display:none">
+
+      <!-- SEZIONE 1: DOCENTE E CLASSE -->
+      <div class="card mt-2">
+        <div class="card-header">
+          <h2 class="card-title">Docente e Classe</h2>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email Docente *</label>
+          <input type="email" id="emailDocente" class="form-control" required
+                 placeholder="nome.cognome@ictuascuola.edu.it">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Nome e Cognome Docente *</label>
+          <input type="text" id="nomeDocente" class="form-control" required placeholder="Mario Rossi">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Istituto Comprensivo *</label>
+          <select id="istituto" class="form-control" required onchange="updatePlessi()">
+            <option value="">Seleziona l'Istituto</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Plesso *</label>
+          <select id="plesso" class="form-control" required disabled onchange="onPlessoChange()">
+            <option value="">Prima seleziona l'Istituto</option>
+          </select>
+          <input type="text" id="plessoCustom" class="form-control" placeholder="Scrivi il nome del plesso"
+                 style="display:none;margin-top:0.5rem;" oninput="aggiornaNoiSquadre()">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Ordine Scolastico *</label>
+          <select id="ordine" class="form-control" required onchange="updateClassi()">
+            <option value="">Seleziona l'ordine</option>
+            <option value="primaria">Scuola Primaria</option>
+            <option value="secondaria">Scuola Secondaria di I grado</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Classe *</label>
+          <select id="classe" class="form-control" required disabled onchange="aggiornaNoiSquadre()">
+            <option value="">Prima seleziona l'ordine</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Sezione *</label>
+          <select id="sezione" class="form-control" required onchange="aggiornaNoiSquadre()">
+            <option value="">Seleziona la sezione</option>
+            <option>A</option><option>B</option><option>C</option>
+            <option>D</option><option>Unica</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- SEZIONE 2: SQUADRE -->
+      <div class="card mt-2">
+        <div class="card-header">
+          <h2 class="card-title">Squadre</h2>
+        </div>
+
+        <div id="squadreContainer"></div>
+
+        <button type="button" id="btnAggiungiSquadra" class="btn btn-outline btn-lg"
+                onclick="aggiungiSquadra()">
+          + Aggiungi un'altra squadra
+        </button>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg btn-block mt-3">
+        Invia Iscrizioni
+      </button>
+
+    </form>
+
+    <!-- SUCCESSO -->
+    <div id="successMessage" class="card mt-3 hidden" style="background: #d1fae5; text-align: center;">
+      <h2 style="color: #065f46;">Iscrizioni Registrate!</h2>
+      <p id="successText">Le tue squadre sono state iscritte con successo.</p>
+      <p>Riceverai una email di conferma con il riepilogo delle squadre.</p>
+      <p style="font-size: 0.85rem; color: #065f46; margin-top: 0.5rem;">
+        Hai squadre da iscrivere per un'altra classe o plesso?
+      </p>
+      <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; margin-top: 1rem;">
+        <button onclick="resetForm()" class="btn btn-primary">
+          Registra un'altra classe
+        </button>
+        <a href="index.html" class="btn btn-outline">Torna alla Home</a>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <p><a href="index.html">Torna alla Home</a></p>
+      <p style="font-size: 0.75rem; margin-top: 0.5rem;">
+        <strong>LogiKron</strong> - Giochi Matematici di Interistituto |
+        <a href="https://edutechlab.it" target="_blank">EduTechLab</a> |
+        Powered by Vibe Coding - Fabio Rizzotto
+      </p>
+    </footer>
+
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/math-bg.js"></script>
+  <script>
+    const MIN_STUDENTI = 5;
+    const MAX_STUDENTI = 9;
+    let squadraCount = 0;
+
+    // Dati IC/Plessi (per compatibilità con fallback)
+    let istitutiDaIntenzioni = [];
+
+    // Mappe sigle ufficiali dal backend
+    let _icSigleMap = {};      // 'IC Gottolengo' → 'GT'
+    let _plessiSigleMap = {};  // 'Fiesse' → 'FI'
+    function abbreviaClasse(nome) {
+      if (nome.toLowerCase().includes('pluriclasse')) {
+        return 'P' + nome.replace(/[^0-9]/g, '');  // "Pluriclasse 3^-4^" → "P34"
+      }
+      return nome.replace(/[^0-9]/g, '');           // "4^" → "4"
+    }
+
+    // Offset dal backend: quante squadre con questo prefisso esistono già nello sheet
+    let baseNumero = 0;
+    let prefissoCorrente = ''; // per rilevare quando cambiano i dropdown
+
+    function generaPrefisso() {
+      const icVal     = document.getElementById('istituto').value;
+      const plessoVal = getPlessoValue();
+      const ordine    = document.getElementById('ordine').value;
+      const classe    = document.getElementById('classe').value;
+      const sezione   = document.getElementById('sezione').value;
+      if (!icVal || !plessoVal || !ordine || !classe || !sezione) return '';
+
+      const icCode     = _icSigleMap[icVal]       || icVal.replace(/^IC /i, '').substring(0, 2).toUpperCase();
+      const plessoCode = _plessiSigleMap[plessoVal] || plessoVal.substring(0, 2).toUpperCase();
+      // Se le due sigle coincidono (IC a sede unica) non duplicare
+      const scuolaPart  = (icCode === plessoCode) ? icCode : icCode + plessoCode;
+      const ordinePart  = ordine === 'primaria' ? 'PRI' : 'SEC';
+      const classePart  = abbreviaClasse(classe);
+      const sezionePart = sezione === 'Unica' ? 'U' : sezione;
+      return scuolaPart + ordinePart + classePart + sezionePart;
+    }
+
+    function generaNomeSquadra(posizione) {
+      const prefisso = generaPrefisso();
+      if (!prefisso) return '—';
+      return prefisso + (baseNumero + posizione);
+    }
+
+    function _renderNoiSquadre() {
+      const notaAttesa = document.getElementById('notaAttesaCodici');
+      if (notaAttesa) notaAttesa.style.display = 'none';
+      document.querySelectorAll('.squadra-card').forEach((card, idx) => {
+        const cardId = card.id.replace('squadra-', '');
+        const pos = idx + 1;
+        const badge = card.querySelector('.squadra-numero');
+        if (badge) badge.textContent = pos;
+        const nomeEl = document.getElementById('nomeSquadra-' + cardId);
+        if (nomeEl) {
+          nomeEl.textContent = generaNomeSquadra(pos);
+          nomeEl.style.opacity = '1';
+        }
+      });
+    }
+
+    function aggiornaNoiSquadre() {
+      const prefisso = generaPrefisso();
+
+      // Dropdown incompleti: mostra trattino
+      if (!prefisso) {
+        document.querySelectorAll('.squadra-card').forEach((card, idx) => {
+          const badge = card.querySelector('.squadra-numero');
+          if (badge) badge.textContent = idx + 1;
+          const nomeEl = document.getElementById('nomeSquadra-' + card.id.replace('squadra-', ''));
+          if (nomeEl) { nomeEl.textContent = '—'; nomeEl.style.opacity = '1'; }
+        });
+        return;
+      }
+
+      // Prefisso cambiato: chiedi al backend il massimo già usato
+      if (prefisso !== prefissoCorrente) {
+        prefissoCorrente = prefisso;
+        baseNumero = 0;
+        // Mostra "..." mentre aspetta la risposta
+        document.querySelectorAll('[id^="nomeSquadra-"]').forEach(el => {
+          el.textContent = '...';
+          el.style.opacity = '0.45';
+        });
+        // Nota di attesa
+        let notaAttesa = document.getElementById('notaAttesaCodici');
+        if (!notaAttesa) {
+          notaAttesa = document.createElement('p');
+          notaAttesa.id = 'notaAttesaCodici';
+          notaAttesa.style.cssText = 'font-size:0.78rem;color:#6b7280;margin:0.25rem 0 0 0;';
+          notaAttesa.textContent = 'Verifica codici sul server...';
+          const container = document.getElementById('squadreContainer');
+          if (container) container.parentNode.insertBefore(notaAttesa, container);
+        }
+        notaAttesa.style.display = 'block';
+        lkApi(LOGIKRON_CONFIG.apiUrl, { action: 'getMaxSquadra', prefisso: prefisso }, 30000)
+          .then(r => {
+            if (prefisso !== prefissoCorrente) return; // dropdown cambiati nel frattempo
+            baseNumero = (r && typeof r.max === 'number') ? r.max : 0;
+            _renderNoiSquadre();
+          })
+          .catch(() => {
+            if (prefisso !== prefissoCorrente) return;
+            baseNumero = 0;
+            _renderNoiSquadre();
+          });
+      } else {
+        _renderNoiSquadre();
+      }
+    }
+
+    function initIstituti() {
+      const sel = document.getElementById('istituto');
+
+      // Pre-popola subito da config.js (sincrono, nessuna attesa API)
+      sel.innerHTML = '<option value="">Seleziona l\'Istituto</option>';
+      LOGIKRON_CONFIG.istituti.forEach(ic => {
+        const opt = document.createElement('option');
+        opt.value = ic.nome;
+        opt.textContent = ic.nome;
+        sel.appendChild(opt);
+      });
+      sel.disabled = false;
+
+      // Aggiorna in background: sigle ufficiali + eventuali nuovi IC da intenzioni
+      const nomiConfig = new Set(LOGIKRON_CONFIG.istituti.map(ic => ic.nome));
+      lkApi(LOGIKRON_CONFIG.apiUrl, { action: 'getIstituti' })
+        .then(r => {
+          const list = (r && r.istituti) ? r.istituti : [];
+          _icSigleMap = {};
+          list.forEach(ic => { _icSigleMap[ic.nome] = ic.sigla; });
+          list.forEach(ic => {
+            if (!nomiConfig.has(ic.nome)) {
+              const opt = document.createElement('option');
+              opt.value = ic.nome;
+              opt.textContent = ic.nome;
+              sel.appendChild(opt);
+              nomiConfig.add(ic.nome);
+            }
+          });
+        })
+        .catch(() => {
+          lkApi(LOGIKRON_CONFIG.apiUrl, { action: 'getIstitutiDaIntenzioni' })
+            .then(data => {
+              (Array.isArray(data) ? data : []).forEach(ic => {
+                if (!nomiConfig.has(ic.nome)) {
+                  const opt = document.createElement('option');
+                  opt.value = ic.nome;
+                  opt.textContent = ic.nome;
+                  sel.appendChild(opt);
+                  nomiConfig.add(ic.nome);
+                }
+              });
+            })
+            .catch(() => {}); // config già popolato, niente da fare
+        });
+    }
+
+    function updatePlessi() {
+      const icNome = document.getElementById('istituto').value;
+      const sel = document.getElementById('plesso');
+      _plessiSigleMap = {};
+      if (!icNome) {
+        sel.innerHTML = '<option value="">Seleziona prima l\'Istituto</option>';
+        sel.disabled = true;
+        aggiornaNoiSquadre();
+        return;
+      }
+
+      // Pre-popola subito da config.js (sincrono, nessuna attesa API)
+      const icConfig = LOGIKRON_CONFIG.istituti.find(ic => ic.nome === icNome);
+      sel.innerHTML = '<option value="">Seleziona il plesso</option>';
+      if (icConfig && icConfig.plessi.length > 0) {
+        icConfig.plessi.forEach(p => {
+          if (p.sigla) _plessiSigleMap[p.nome] = p.sigla;
+          const opt = document.createElement('option');
+          opt.value = p.nome;
+          opt.textContent = p.nome;
+          sel.appendChild(opt);
+        });
+        const altroOpt = document.createElement('option');
+        altroOpt.value = '__altro__';
+        altroOpt.textContent = '✏️ Altro (inserisci manualmente)...';
+        sel.appendChild(altroOpt);
+        sel.disabled = false;
+        aggiornaNoiSquadre();
+      }
+
+      // Aggiorna in background con dati ufficiali dal backend (sigle + nuovi plessi)
+      lkApi(LOGIKRON_CONFIG.apiUrl, { action: 'getPlessi', ic: icNome })
+        .then(r => {
+          const plessi = (r && r.plessi) ? r.plessi.filter(p => p.ic === icNome) : [];
+          if (plessi.length === 0) return; // nessun dato utile, tieni config
+          plessi.forEach(p => { if (p.sigla) _plessiSigleMap[p.nome] = p.sigla; });
+          sel.innerHTML = '<option value="">Seleziona il plesso</option>';
+          plessi.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.nome;
+            opt.textContent = p.nome;
+            sel.appendChild(opt);
+          });
+          const altroOpt = document.createElement('option');
+          altroOpt.value = '__altro__';
+          altroOpt.textContent = '✏️ Altro (inserisci manualmente)...';
+          sel.appendChild(altroOpt);
+          sel.disabled = false;
+          aggiornaNoiSquadre();
+        })
+        .catch(() => {
+          // config già popolato; aggiungi __altro__ se manca
+          if (!sel.querySelector('[value="__altro__"]')) {
+            const altroOpt = document.createElement('option');
+            altroOpt.value = '__altro__';
+            altroOpt.textContent = '✏️ Inserisci manualmente...';
+            sel.appendChild(altroOpt);
+          }
+          sel.disabled = false;
+          aggiornaNoiSquadre();
+        });
+    }
+
+    function onPlessoChange() {
+      const sel = document.getElementById('plesso');
+      const custom = document.getElementById('plessoCustom');
+      if (sel.value === '__altro__') {
+        custom.style.display = 'block';
+        custom.required = true;
+        custom.focus();
+      } else {
+        custom.style.display = 'none';
+        custom.required = false;
+        custom.value = '';
+      }
+      aggiornaNoiSquadre();
+    }
+
+    function getPlessoValue() {
+      const sel = document.getElementById('plesso');
+      if (sel.value === '__altro__') return document.getElementById('plessoCustom').value.trim();
+      return sel.value;
+    }
+
+    function updateClassi() {
+      const ordine = document.getElementById('ordine').value;
+      const sel = document.getElementById('classe');
+      sel.innerHTML = '<option value="">Seleziona la classe</option>';
+      if (ordine && LOGIKRON_CONFIG.classi[ordine]) {
+        LOGIKRON_CONFIG.classi[ordine].forEach(cl => {
+          const opt = document.createElement('option');
+          opt.value = cl.nome;
+          opt.textContent = cl.nome;
+          sel.appendChild(opt);
+        });
+        sel.disabled = false;
+      } else {
+        sel.disabled = true;
+      }
+      aggiornaNoiSquadre();
+    }
+
+    function aggiungiSquadra() {
+      squadraCount++;
+      const n = squadraCount;
+      const div = document.createElement('div');
+      div.className = 'squadra-card';
+      div.id = 'squadra-' + n;
+
+      let studentiHtml = '<div class="studenti-grid" id="studenti-grid-' + n + '">';
+      for (let i = 1; i <= MIN_STUDENTI; i++) {
+        studentiHtml += rowStudente(n, i);
+      }
+      studentiHtml += '</div>';
+
+      div.innerHTML = `
+        <div class="squadra-card-header">
+          <div class="squadra-numero">${n}</div>
+          <div style="flex:1; display:flex; flex-direction:column; gap:0.1rem;">
+            <span style="font-size:0.7rem; color:#6b7280; text-transform:uppercase; letter-spacing:0.04em;">Codice squadra (auto)</span>
+            <code id="nomeSquadra-${n}" style="font-size:1.1rem; font-weight:800; color:#4f46e5; letter-spacing:0.08em;">—</code>
+          </div>
+          <button type="button" class="btn-rimuovi-squadra"
+                  onclick="rimuoviSquadra(${n})" title="Rimuovi squadra">✕ Rimuovi</button>
+        </div>
+        <p style="font-size:0.82rem; color:#6b7280; margin: 0 0 0.75rem 0;">
+          Inserisci i nomi degli studenti (min. 5, max. 9):
+        </p>
+        ${studentiHtml}
+        <div class="squadra-footer">
+          <button type="button" class="btn-studente" id="btnAdd-${n}"
+                  onclick="aggiungiStudente(${n})">+ Studente</button>
+          <span class="studenti-count warn" id="count-${n}">
+            ${MIN_STUDENTI} studenti inseriti
+          </span>
+        </div>
+      `;
+
+      document.getElementById('squadreContainer').appendChild(div);
+      aggiornaCount(n);
+      aggiornaBottoneAggiungi();
+      aggiornaNoiSquadre();
+    }
+
+    function rowStudente(squadraId, num) {
+      return `<div class="studente-row" id="row-${squadraId}-${num}">
+        <span class="studente-num">${num}.</span>
+        <input type="text" class="studente-input"
+               id="studente-${squadraId}-${num}"
+               placeholder="Nome Cognome"
+               oninput="aggiornaCount(${squadraId})">
+      </div>`;
+    }
+
+    function aggiungiStudente(squadraId) {
+      const grid = document.getElementById('studenti-grid-' + squadraId);
+      const righe = grid.querySelectorAll('.studente-row').length;
+      if (righe >= MAX_STUDENTI) return;
+      const num = righe + 1;
+      grid.insertAdjacentHTML('beforeend', rowStudente(squadraId, num));
+      aggiornaCount(squadraId);
+    }
+
+    function aggiornaCount(squadraId) {
+      const grid = document.getElementById('studenti-grid-' + squadraId);
+      const inputs = grid.querySelectorAll('.studente-input');
+      const compilati = Array.from(inputs).filter(i => i.value.trim() !== '').length;
+      const tot = inputs.length;
+      const span = document.getElementById('count-' + squadraId);
+      const btnAdd = document.getElementById('btnAdd-' + squadraId);
+
+      span.textContent = compilati + ' / ' + tot + ' studenti';
+      if (compilati >= MIN_STUDENTI) {
+        span.className = 'studenti-count ok';
+      } else {
+        span.className = 'studenti-count warn';
+      }
+      if (btnAdd) btnAdd.disabled = tot >= MAX_STUDENTI;
+    }
+
+    function rimuoviSquadra(n) {
+      if (document.querySelectorAll('.squadra-card').length <= 1) {
+        alert('Deve esserci almeno una squadra.');
+        return;
+      }
+      const el = document.getElementById('squadra-' + n);
+      if (el) el.remove();
+      aggiornaBottoneAggiungi();
+      aggiornaNoiSquadre();
+    }
+
+    function aggiornaBottoneAggiungi() {
+      // Limite pratico: max 10 squadre
+      const tot = document.querySelectorAll('.squadra-card').length;
+      document.getElementById('btnAggiungiSquadra').disabled = tot >= 10;
+    }
+
+    function raccogliSquadre() {
+      const cards = document.querySelectorAll('.squadra-card');
+      const teams = [];
+      cards.forEach(card => {
+        const id = card.id.replace('squadra-', '');
+        const nomeEl = document.getElementById('nomeSquadra-' + id);
+        const nome = (nomeEl ? nomeEl.textContent : '').trim();
+        const inputs = card.querySelectorAll('.studente-input');
+        const studenti = Array.from(inputs).map(i => i.value.trim()).filter(v => v !== '');
+        teams.push({ nome: nome || ('SQUADRA' + id), studenti: studenti });
+      });
+      return teams;
+    }
+
+    // Submit
+    document.getElementById('formIscrizioni').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const email = document.getElementById('emailDocente').value.trim();
+      const nome = document.getElementById('nomeDocente').value.trim();
+      const istituto = document.getElementById('istituto').value;
+      const plesso = getPlessoValue();
+      const ordine = document.getElementById('ordine').value;
+      const classe = document.getElementById('classe').value;
+      const sezione = document.getElementById('sezione').value;
+
+      if (!email || !nome || !istituto || !plesso || !ordine || !classe || !sezione) {
+        alert('Compila tutti i campi obbligatori nella sezione Docente e Classe.');
+        return;
+      }
+
+      const teams = raccogliSquadre();
+      const valide = teams.filter(t => t.studenti.length >= MIN_STUDENTI);
+      if (valide.length === 0) {
+        alert('Ogni squadra deve avere almeno ' + MIN_STUDENTI + ' studenti.');
+        return;
+      }
+      if (teams.some(t => t.studenti.length > 0 && t.studenti.length < MIN_STUDENTI)) {
+        if (!confirm('Alcune squadre hanno meno di ' + MIN_STUDENTI + ' studenti e saranno ignorate. Continuare?')) return;
+      }
+
+      const btn = e.target.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.textContent = 'Invio in corso...';
+
+      lkApi(LOGIKRON_CONFIG.apiUrl, {
+        action: 'salvaIscrizione',
+        email: email,
+        nome: nome,
+        istituto: istituto,
+        plesso: plesso,
+        ordine: ordine,
+        classe: classe,
+        sezione: sezione,
+        teams: JSON.stringify(teams),
+        timestamp: new Date().toISOString()
+      })
+      .then(result => {
+        if (result.error) throw new Error(result.error);
+        document.getElementById('formIscrizioni').classList.add('hidden');
+        document.getElementById('successText').textContent =
+          result.nSquadre + ' squadr' + (result.nSquadre === 1 ? 'a iscritta' : 'e iscritte') + ' con successo!';
+        document.getElementById('successMessage').classList.remove('hidden');
+      })
+      .catch(err => {
+        btn.disabled = false;
+        btn.textContent = 'Invia Iscrizioni';
+        alert('Errore:\n' + err.message);
+      });
+    });
+
+    function resetForm() {
+      // Resetta il form e torna alla schermata di inserimento
+      document.getElementById('formIscrizioni').reset();
+      document.getElementById('plesso').disabled = true;
+      const plessoCustom = document.getElementById('plessoCustom');
+      plessoCustom.style.display = 'none';
+      plessoCustom.value = '';
+      document.getElementById('classe').disabled = true;
+      document.getElementById('squadreContainer').innerHTML = '';
+      squadraCount = 0;
+      aggiungiSquadra();
+      document.getElementById('formIscrizioni').classList.remove('hidden');
+      document.getElementById('successMessage').classList.add('hidden');
+      const btn = document.querySelector('#formIscrizioni button[type="submit"]');
+      btn.disabled = false;
+      btn.textContent = 'Invia Iscrizioni';
+      window.scrollTo(0, 0);
+    }
+
+    // Verifica fase all'avvio: blocca il form se le iscrizioni non sono aperte
+    var _faseIscrizioni = null;
+    function checkFaseIscrizioni() {
+      lkApi(LOGIKRON_CONFIG.apiUrl, { action: 'getFase' })
+        .then(r => {
+          if (!r) return;
+          const attiva = (r.fase === 2);
+          if (_faseIscrizioni === null) {
+            _faseIscrizioni = attiva;
+            const loader = document.getElementById('loadingCard');
+            if (loader) loader.style.display = 'none';
+            if (attiva) {
+              document.getElementById('formIscrizioni').style.display = '';
+            } else {
+              document.getElementById('formIscrizioni').outerHTML =
+                '<div class="card mt-2" style="background:#fef3c7; border-left:4px solid #f59e0b; text-align:center;">' +
+                '<p style="font-size:1.1rem; font-weight:600; margin:0 0 0.5rem 0;">⏸ Fase Iscrizioni non attiva</p>' +
+                '<p style="margin:0; color:#92400e;">' +
+                  (r.fase < 2 ? 'Le iscrizioni non sono ancora aperte. Attendi la comunicazione dall\'organizzazione.' :
+                   'La fase delle iscrizioni si è conclusa. Per informazioni contatta l\'organizzazione.') +
+                '</p><p style="margin:0.5rem 0 0 0;"><a href="index.html">← Torna alla Home</a></p>' +
+                '</div>';
+            }
+          } else if (attiva !== _faseIscrizioni) {
+            // Fase cambiata mentre la pagina era aperta: ricarica
+            location.reload();
+          }
+        })
+        .catch(function() {
+          if (_faseIscrizioni === null) {
+            _faseIscrizioni = true;
+            const loader = document.getElementById('loadingCard');
+            if (loader) loader.style.display = 'none';
+            document.getElementById('formIscrizioni').style.display = '';
+          }
+        });
+    }
+    checkFaseIscrizioni();
+    setInterval(checkFaseIscrizioni, 12000);
+
+    // Init
+    initIstituti();
+    aggiungiSquadra(); // parte con 1 squadra già pronta
+  </script>
+</body>
+</html>

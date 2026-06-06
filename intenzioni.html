@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LogiKron - Intenzione di Partecipazione</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <meta name="theme-color" content="#4f46e5">
+  <script>if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js');navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.type==='SW_UPDATED')location.reload();});}</script>
+</head>
+<body>
+  <div class="container container-sm">
+
+    <!-- HEADER -->
+    <header class="text-center">
+      <div class="logo-container" style="font-size: 2rem;">
+        <span class="logo-l">L</span>
+        <span class="logo-o1">o</span>
+        <span class="logo-g">g</span>
+        <span class="logo-sand">&#8987;</span>
+        <span class="logo-k">K</span>
+        <span class="logo-r">r</span>
+        <span class="logo-o2">o</span>
+        <span class="logo-n">n</span>
+      </div>
+      <h1 style="font-size: 1.25rem; color: var(--lk-primary);">
+        Intenzione di Partecipazione
+      </h1>
+      <p class="text-muted">Giochi Matematici di Interistituto 2025-2026</p>
+    </header>
+
+    <!-- INFO -->
+    <div class="card mt-3" style="background: #fef3c7; border-left: 4px solid #f59e0b;">
+      <p style="margin: 0;">
+        <strong>Fase 1:</strong> Esprimi l'intenzione di partecipare con la tua classe.
+        I dati inseriti qui serviranno per abilitare l'iscrizione delle squadre nella Fase 2.
+      </p>
+    </div>
+
+    <!-- LOADER (visibile subito, sostituito da form o messaggio errore) -->
+    <div class="card mt-2" id="loadingCard" style="text-align:center; padding: 2rem 1rem;">
+      <div style="font-size:2rem; margin-bottom:0.75rem;">⏳</div>
+      <p style="font-weight:600; color:var(--lk-primary); margin:0 0 0.25rem 0;">Caricamento modulo in corso...</p>
+      <p style="font-size:0.85rem; color:#6b7280; margin:0;">Attendi qualche secondo</p>
+      <p style="font-size:0.78rem; color:#9ca3af; margin:0.5rem 0 0 0;">Per la migliore esperienza usa <strong>Google Chrome</strong>.</p>
+    </div>
+
+    <!-- FORM (nascosto di default, mostrato solo se fase = 1) -->
+    <div class="card mt-2" id="formCard" style="display:none">
+      <form id="formIntenzioni">
+
+        <div class="form-group">
+          <label class="form-label">Email Docente *</label>
+          <input type="email" id="emailDocente" class="form-control" required
+                 placeholder="nome.cognome@ictuascuola.edu.it">
+          <p class="form-hint">Usa l'email istituzionale. Riceverai qui le comunicazioni.</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Nome e Cognome Docente *</label>
+          <input type="text" id="nomeDocente" class="form-control" required
+                 placeholder="Mario Rossi">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Istituto Comprensivo *</label>
+          <input type="text" id="istituto" class="form-control" required
+                 placeholder="Cerca o scrivi il nome del tuo IC..."
+                 list="istitutiSuggeriti" autocomplete="off"
+                 oninput="aggiornaPlessiSuggeriti(true)">
+          <datalist id="istitutiSuggeriti"></datalist>
+          <p class="form-hint" id="istitutoHint">Caricamento lista istituti...</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Plesso *</label>
+          <input type="text" id="plesso" class="form-control" required
+                 placeholder="es. Gottolengo, Gambara, Fiesse..."
+                 list="plessiSuggeriti" autocomplete="off">
+          <datalist id="plessiSuggeriti"></datalist>
+          <p class="form-hint">Se sei l'unica sede, scrivi il nome del tuo comune. Se il plesso non è nell'elenco, scrivilo direttamente: sarà aggiunto al sistema.</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Ordine Scolastico *</label>
+          <select id="ordine" class="form-control" required onchange="updateClassi()">
+            <option value="">Seleziona l'ordine</option>
+            <option value="primaria">Scuola Primaria</option>
+            <option value="secondaria">Scuola Secondaria di I grado</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Classe *</label>
+          <select id="classe" class="form-control" required disabled>
+            <option value="">Prima seleziona l'ordine scolastico</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Sezione *</label>
+          <input type="text" id="sezione" class="form-control" required
+                 list="sezioneSuggeriti" placeholder="Es. A, B, E, Unica..."
+                 maxlength="10" autocomplete="off">
+          <datalist id="sezioneSuggeriti">
+            <option value="A">
+            <option value="B">
+            <option value="C">
+            <option value="D">
+            <option value="E">
+            <option value="F">
+            <option value="G">
+            <option value="Unica">
+          </datalist>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Numero stimato di squadre</label>
+          <select id="numeroSquadre" class="form-control">
+            <option value="1">1 squadra</option>
+            <option value="2">2 squadre</option>
+            <option value="3">3 squadre</option>
+            <option value="4">4 o piu squadre</option>
+          </select>
+          <p class="form-hint">Stima approssimativa, potrai modificare in fase di iscrizione.</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Note (opzionale)</label>
+          <textarea id="note" class="form-control" rows="3"
+                    placeholder="Eventuali comunicazioni o richieste..."></textarea>
+          <p class="form-hint">Se riscontrate errori nei dati dell'istituto/plesso, o avete richieste particolari, scrivetele qui: l'organizzazione provvederà a rispondere o a correggere.</p>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg btn-block mt-3">
+          Invia Intenzione
+        </button>
+
+      </form>
+    </div>
+
+    <!-- SUCCESSO (nascosto) -->
+    <div id="successMessage" class="card mt-3 hidden" style="background: #d1fae5; text-align: center;">
+      <h2 style="color: #065f46;">Intenzione Registrata!</h2>
+      <p>Grazie per aver espresso l'intenzione di partecipare ai Giochi LogiKron.</p>
+      <p>Riceverai una email quando sara aperta la fase di iscrizione squadre.</p>
+      <a href="index.html" class="btn btn-outline mt-2">Torna alla Home</a>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <p>
+        <a href="index.html">Torna alla Home</a>
+      </p>
+      <p style="font-size: 0.75rem; margin-top: 0.5rem;">
+        <strong>LogiKron</strong> - Giochi Matematici di Interistituto |
+        <a href="https://edutechlab.it" target="_blank">EduTechLab</a> |
+        Powered by Vibe Coding - Fabio Rizzotto
+      </p>
+    </footer>
+
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/math-bg.js"></script>
+  <script>
+    var _icList = [];
+    var _plessiMap = {}; // { 'IC Gottolengo': ['Gottolengo','Gambara',...] }
+    var _faseVerificata = false;
+    var _fallbackTimer = null;
+
+    // Popola subito datalist IC da config.js (sincrono, nessuna attesa API)
+    (function() {
+      const dl = document.getElementById('istitutiSuggeriti');
+      if (!dl || !LOGIKRON_CONFIG.istituti) return;
+      LOGIKRON_CONFIG.istituti.forEach(function(ic) {
+        _plessiMap[ic.nome] = (ic.plessi || []).map(function(p) { return p.nome; });
+        const opt = document.createElement('option');
+        opt.value = ic.nome;
+        dl.appendChild(opt);
+      });
+      if (LOGIKRON_CONFIG.istituti.length > 0) {
+        document.getElementById('istitutoHint').textContent =
+          'Seleziona dall\'elenco o scrivi il nome del tuo IC se non è presente.';
+      }
+    })();
+
+    // Dopo 8 secondi senza risposta dal backend: mostra il form comunque.
+    // Il server rifiuterà comunque l'invio se la fase non è attiva.
+    _fallbackTimer = setTimeout(function() {
+      if (!_faseVerificata) {
+        _faseVerificata = true;
+        document.getElementById('loadingCard').style.display = 'none';
+        document.getElementById('formCard').style.display = '';
+      }
+    }, 8000);
+
+    // Carica fase + dati in background (una sola chiamata)
+    lkApi(LOGIKRON_CONFIG.apiUrl, { action: 'getInitData' }, 45000)
+      .then(r => {
+        if (!r) return;
+
+        clearTimeout(_fallbackTimer);
+
+        // Gestione fase (solo se non già mostrato dal fallback)
+        if (!_faseVerificata) {
+          _faseVerificata = true;
+          document.getElementById('loadingCard').style.display = 'none';
+
+          if (r.fase !== 1) {
+            document.getElementById('formCard').outerHTML =
+              '<div class="card mt-2" style="background:#fef3c7; border-left:4px solid #f59e0b; text-align:center;">' +
+              '<p style="font-size:1.1rem; font-weight:600; margin:0 0 0.5rem 0;">⏸ Fase Intenzioni non attiva</p>' +
+              '<p style="margin:0; color:#92400e;">' +
+                (r.fase === 0 ? 'La raccolta delle intenzioni non è ancora aperta.' :
+                 r.fase >= 2  ? 'La fase delle intenzioni si è conclusa. Attendi le comunicazioni dell\'organizzazione.' :
+                 'Fase ' + r.fase + ': questo form non è attivo.') +
+              '</p><p style="margin:0.5rem 0 0 0;"><a href="index.html">← Torna alla Home</a></p>' +
+              '</div>';
+            return;
+          }
+          document.getElementById('formCard').style.display = '';
+
+        } else if (r.fase !== 1) {
+          // Fallback timer aveva già mostrato il form, ma la fase non è attiva: blocca ora
+          const fc = document.getElementById('formCard');
+          if (fc) fc.outerHTML =
+            '<div class="card mt-2" style="background:#fef3c7; border-left:4px solid #f59e0b; text-align:center;">' +
+            '<p style="font-size:1.1rem; font-weight:600; margin:0 0 0.5rem 0;">⏸ Fase Intenzioni non attiva</p>' +
+            '<p style="margin:0; color:#92400e;">' +
+              (r.fase === 0 ? 'La raccolta delle intenzioni non è ancora aperta.' :
+               r.fase >= 2  ? 'La fase delle intenzioni si è conclusa. Attendi le comunicazioni dell\'organizzazione.' :
+               'Fase ' + r.fase + ': questo form non è attivo.') +
+            '</p><p style="margin:0.5rem 0 0 0;"><a href="index.html">← Torna alla Home</a></p>' +
+            '</div>';
+          return;
+        }
+
+        // Popola IC/plessi — sempre, anche se il fallback aveva già mostrato il form
+        const dlIstituti = document.getElementById('istitutiSuggeriti');
+        if (!dlIstituti) return;
+        const nomiGiaAggiunti = new Set();
+        if (r.istitutiDaIntenzioni && r.istitutiDaIntenzioni.length) {
+          r.istitutiDaIntenzioni.forEach(ic => {
+            _plessiMap[ic.nome] = ic.plessi || [];
+            const opt = document.createElement('option');
+            opt.value = ic.nome;
+            dlIstituti.appendChild(opt);
+            nomiGiaAggiunti.add(ic.nome);
+          });
+        }
+        if (r.istituti && r.istituti.length) {
+          r.istituti.forEach(ic => {
+            if (!nomiGiaAggiunti.has(ic.nome)) {
+              const opt = document.createElement('option');
+              opt.value = ic.nome;
+              dlIstituti.appendChild(opt);
+            }
+          });
+        }
+        document.getElementById('istitutoHint').textContent =
+          'Seleziona dall\'elenco o scrivi il nome del tuo IC se non è presente.';
+        const icCorrente = document.getElementById('istituto').value;
+        if (icCorrente) aggiornaPlessiSuggeriti(false);
+      })
+      .catch(() => {
+        if (_faseVerificata) return;
+        clearTimeout(_fallbackTimer);
+        _faseVerificata = true;
+        document.getElementById('loadingCard').style.display = 'none';
+        document.getElementById('formCard').style.display = '';
+      });
+
+    // Poll leggero per cambi di fase (AS già caldo dopo getInitData)
+    setInterval(function() {
+      if (!_faseVerificata) return;
+      lkApi(LOGIKRON_CONFIG.apiUrl, { action: 'getFase' }, 15000)
+        .then(r => { if (r && r.fase !== 1) location.reload(); })
+        .catch(() => {});
+    }, 12000);
+
+    function aggiornaPlessiSuggeriti(svuotaPlesso) {
+      const ic = document.getElementById('istituto').value;
+      const dl = document.getElementById('plessiSuggeriti');
+      dl.innerHTML = '';
+      (_plessiMap[ic] || []).forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p;
+        dl.appendChild(opt);
+      });
+      if (svuotaPlesso !== false) document.getElementById('plesso').value = '';
+    }
+
+    // Aggiorna classi quando cambia ordine scolastico
+    function updateClassi() {
+      const ordine = document.getElementById('ordine').value;
+      const classeSelect = document.getElementById('classe');
+
+      classeSelect.innerHTML = '<option value="">Seleziona la classe</option>';
+
+      if (ordine && LOGIKRON_CONFIG.classi[ordine]) {
+        LOGIKRON_CONFIG.classi[ordine].forEach(cl => {
+          const option = document.createElement('option');
+          option.value = cl.nome;
+          option.textContent = cl.nome;
+          classeSelect.appendChild(option);
+        });
+        classeSelect.disabled = false;
+      } else {
+        classeSelect.disabled = true;
+      }
+    }
+
+    // Submit form
+    document.getElementById('formIntenzioni').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const btn = e.target.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.textContent = 'Invio in corso...';
+
+      const formData = {
+        action: 'salvaIntenzione',
+        email: document.getElementById('emailDocente').value,
+        nome: document.getElementById('nomeDocente').value,
+        istituto: document.getElementById('istituto').value.trim(),
+        plesso: document.getElementById('plesso').value.trim(),
+        ordine: document.getElementById('ordine').value,
+        classe: document.getElementById('classe').value,
+        sezione: document.getElementById('sezione').value,
+        numeroSquadre: document.getElementById('numeroSquadre').value,
+        note: document.getElementById('note').value,
+        timestamp: new Date().toISOString()
+      };
+
+      // Timeout 45s + 1 retry automatico (gestisce il cold start di Apps Script)
+      lkApi(LOGIKRON_CONFIG.apiUrl, formData, 45000)
+        .catch(err => {
+          if (err.message === 'Timeout risposta server') {
+            btn.textContent = 'Connessione lenta, riprovando\u2026';
+            return lkApi(LOGIKRON_CONFIG.apiUrl, formData, 45000);
+          }
+          throw err;
+        })
+        .then(result => {
+          if (result.error) throw new Error(result.error);
+          document.getElementById('formIntenzioni').parentElement.classList.add('hidden');
+          document.getElementById('successMessage').classList.remove('hidden');
+        })
+        .catch(err => {
+          btn.disabled = false;
+          btn.textContent = 'Invia Intenzione';
+          const msg = err.message === 'Timeout risposta server'
+            ? 'Il server è lento in questo momento.\nAttendi qualche secondo e riprova.'
+            : err.message;
+          alert('Errore durante l\'invio:\n' + msg);
+        });
+    });
+
+</script>
+</body>
+</html>

@@ -1,0 +1,1916 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Attestati – LogiKron</title>
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Great+Vibes&display=swap">
+  <style>
+    :root {
+      --lk-bg: #0f172a;
+      --lk-surface: #1e293b;
+      --lk-border: #334155;
+      --lk-primary: #6366f1;
+      --lk-accent: #7c3aed;
+      --lk-text: #e2e8f0;
+      --lk-text-muted: #94a3b8;
+      --lk-success: #10b981;
+      --lk-warning: #f59e0b;
+      --lk-gold: #fbbf24;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--lk-bg); color: var(--lk-text); font-family: 'Segoe UI', sans-serif; min-height: 100vh; }
+
+    .container { max-width: 900px; margin: 0 auto; padding: 1.5rem; }
+
+    /* Header */
+    .page-header {
+      display: flex; align-items: center; gap: 1rem;
+      padding: 1rem 0 1.5rem; border-bottom: 1px solid var(--lk-border); margin-bottom: 1.5rem;
+    }
+    .page-header h1 { font-size: 1.5rem; font-weight: 700; }
+    .page-header h1 span { color: var(--lk-primary); }
+    .back-btn {
+      margin-left: auto; background: transparent; border: 1px solid var(--lk-border);
+      color: var(--lk-text-muted); padding: 0.4rem 1rem; border-radius: 8px;
+      cursor: pointer; font-size: 0.85rem; text-decoration: none;
+    }
+    .back-btn:hover { border-color: var(--lk-primary); color: var(--lk-text); }
+
+    /* Login */
+    .login-box {
+      max-width: 380px; margin: 120px auto; background: var(--lk-surface);
+      border: 1px solid var(--lk-border); border-radius: 16px; padding: 2rem; text-align: center;
+    }
+    .login-box h2 { margin-bottom: 0.5rem; }
+    .login-box p { color: var(--lk-text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    .login-input {
+      width: 100%; padding: 0.7rem 1rem; background: #0f172a; border: 1px solid var(--lk-border);
+      border-radius: 8px; color: var(--lk-text); font-size: 1rem; margin-bottom: 0.75rem;
+    }
+    .login-input:focus { outline: none; border-color: var(--lk-primary); }
+    .login-error { color: #f87171; font-size: 0.85rem; margin-bottom: 0.75rem; display: none; }
+
+    /* Bottoni */
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.6rem 1.2rem; border-radius: 8px; cursor: pointer;
+      font-size: 0.9rem; font-weight: 600; border: none; transition: opacity 0.2s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary { background: linear-gradient(135deg, var(--lk-primary), var(--lk-accent)); color: #fff; }
+    .btn-outline { background: transparent; border: 1px solid var(--lk-border); color: var(--lk-text); }
+    .btn-gold { background: linear-gradient(135deg, #b45309, var(--lk-gold)); color: #1c1917; }
+    .btn-sm { padding: 0.35rem 0.8rem; font-size: 0.8rem; }
+    .btn-block { width: 100%; justify-content: center; }
+
+    /* Card configurazione */
+    .card {
+      background: var(--lk-surface); border: 1px solid var(--lk-border);
+      border-radius: 12px; padding: 1.25rem; margin-bottom: 1.25rem;
+    }
+    .card-title { font-size: 0.85rem; font-weight: 700; color: var(--lk-text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+    .form-group label { font-size: 0.8rem; color: var(--lk-text-muted); }
+    .form-input {
+      padding: 0.6rem 0.8rem; background: #0f172a; border: 1px solid var(--lk-border);
+      border-radius: 8px; color: var(--lk-text); font-size: 0.9rem;
+    }
+    .form-input:focus { outline: none; border-color: var(--lk-primary); }
+
+    /* Squadre */
+    .squadre-header {
+      display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;
+    }
+    .squadre-count { font-size: 0.85rem; color: var(--lk-text-muted); }
+
+    .squadra-block {
+      background: var(--lk-surface); border: 1px solid var(--lk-border);
+      border-radius: 12px; margin-bottom: 0.75rem; overflow: hidden;
+    }
+    .squadra-header {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.9rem 1.1rem; cursor: pointer; user-select: none;
+    }
+    .squadra-header:hover { background: rgba(255,255,255,0.03); }
+    .pos-badge {
+      width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center;
+      justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;
+    }
+    .pos-1 { background: linear-gradient(135deg, #b45309, #fbbf24); color: #1c1917; }
+    .pos-other { background: var(--lk-border); color: var(--lk-text-muted); }
+    .squadra-nome { font-weight: 600; font-size: 0.95rem; }
+    .att-badge {
+      font-size: 0.75rem; padding: 0.2rem 0.65rem; border-radius: 999px; font-weight: 600;
+    }
+    .att-merito { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+    .att-partecipazione { background: rgba(99,102,241,0.15); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.3); }
+    .squadra-info { margin-left: auto; display: flex; align-items: center; gap: 0.75rem; }
+    .n-alunni { font-size: 0.8rem; color: var(--lk-text-muted); }
+    .chevron { font-size: 0.7rem; color: var(--lk-text-muted); transition: transform 0.2s; }
+    .squadra-block.open .chevron { transform: rotate(180deg); }
+
+    .alunni-list { border-top: 1px solid var(--lk-border); display: none; }
+    .squadra-block.open .alunni-list { display: block; }
+    .alunno-row {
+      display: flex; align-items: center; padding: 0.6rem 1.1rem 0.6rem 1.5rem;
+      border-bottom: 1px solid rgba(51,65,85,0.5); gap: 0.75rem;
+    }
+    .alunno-row:last-child { border-bottom: none; }
+    .alunno-nome { flex: 1; font-size: 0.9rem; }
+    .alunno-tipo { font-size: 0.75rem; color: var(--lk-text-muted); }
+
+    /* Progress PDF */
+    .progress-bar-wrap {
+      background: #0f172a; border-radius: 999px; height: 6px; overflow: hidden; margin: 0.5rem 0;
+    }
+    .progress-bar { height: 100%; background: linear-gradient(90deg, var(--lk-primary), var(--lk-accent)); transition: width 0.3s; }
+
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 1.5rem; right: 1.5rem;
+      background: var(--lk-surface); border: 1px solid var(--lk-border);
+      border-radius: 10px; padding: 1rem 1.25rem; z-index: 9999;
+      font-size: 0.9rem; max-width: 320px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      animation: slideIn 0.3s ease;
+    }
+    @keyframes slideIn { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    #loadingMsg { text-align: center; color: var(--lk-text-muted); padding: 3rem; display: none; }
+    #emptyMsg { text-align: center; color: var(--lk-text-muted); padding: 2rem; display: none; }
+
+    /* Selezione attestati */
+    .selezione-bar {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.5rem 0.25rem; margin-bottom: 0.5rem;
+      font-size: 0.82rem; color: var(--lk-text-muted);
+    }
+    .btn-sel {
+      background: transparent; border: 1px solid var(--lk-border); color: var(--lk-text-muted);
+      padding: 0.25rem 0.65rem; border-radius: 6px; cursor: pointer; font-size: 0.78rem;
+    }
+    .btn-sel:hover { border-color: var(--lk-primary); color: var(--lk-text); }
+    .sq-checkbox, .al-checkbox {
+      width: 16px; height: 16px; cursor: pointer; flex-shrink: 0;
+      accent-color: var(--lk-primary);
+    }
+    .al-checkbox { margin-right: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginPanel">
+  <div class="login-box">
+    <div style="font-size:2.5rem;margin-bottom:0.75rem;">📜</div>
+    <h2>Genera Attestati</h2>
+    <p>LogiKron – Area Riservata</p>
+    <input id="loginPwd" type="password" class="login-input" placeholder="Password admin"
+           onkeypress="if(event.key==='Enter') doLogin()">
+    <div id="loginError" class="login-error">Password non corretta</div>
+    <button class="btn btn-primary btn-block" onclick="doLogin()">Accedi</button>
+  </div>
+</div>
+
+<!-- MAIN PANEL -->
+<div id="mainPanel" style="display:none;">
+  <div class="container">
+
+    <div class="page-header">
+      <span style="font-size:1.5rem;">📜</span>
+      <h1>Genera <span>Attestati</span></h1>
+      <button class="back-btn" onclick="mostraInfo()" title="Come funziona">ℹ️ Guida</button>
+      <a href="admin.html" class="back-btn">← Admin</a>
+    </div>
+
+    <!-- Config -->
+    <div class="card">
+      <div class="card-title">Configurazione</div>
+      <div class="form-row" style="margin-bottom:1rem;">
+        <div class="form-group">
+          <label>Gara</label>
+          <select id="selGara" class="form-input" onchange="onGaraChange()">
+            <option value="">— Seleziona gara —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Anno Scolastico</label>
+          <input id="annoScolastico" class="form-input" readonly
+                 value="" style="opacity:0.6;">
+        </div>
+      </div>
+      <div class="form-row" style="margin-bottom:1rem;">
+        <div class="form-group">
+          <label>Nome Dirigente Scolastico</label>
+          <input id="nomeDS" class="form-input" placeholder="es. Prof.ssa Maria Rossi" oninput="saveConfig()">
+        </div>
+        <div class="form-group">
+          <label>Nome Referente Matematica</label>
+          <input id="nomeRef" class="form-input" placeholder="es. Ins. Fabio Rizzotto" oninput="saveConfig()">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Data cerimonia</label>
+          <input id="dataCerimonia" class="form-input" type="date" oninput="saveConfig()">
+        </div>
+        <div class="form-group" style="justify-content:flex-end;">
+          <button id="btnCarica" class="btn btn-primary" onclick="caricaDati()" disabled>
+            📥 Carica dati gara
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stato caricamento -->
+    <div id="loadingMsg">⏳ Caricamento dati in corso...</div>
+    <div id="emptyMsg">⚠️ Nessun dato trovato per questa gara.</div>
+
+    <!-- Lista squadre -->
+    <div id="squadrePanel" style="display:none;">
+      <div class="squadre-header">
+        <div>
+          <div style="font-weight:700;font-size:1rem;">Squadre e Alunni</div>
+          <div id="riepilogoCount" class="squadre-count"></div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+          <div id="progressWrap" style="display:none;min-width:200px;">
+            <div style="font-size:0.75rem;color:var(--lk-text-muted);margin-bottom:2px;" id="progressLabel">Generazione...</div>
+            <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+          </div>
+          <button class="btn btn-outline" onclick="scaricaTutti()" id="btnTutti">
+            ⬇️ Scarica tutti (locale)
+          </button>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <button class="btn btn-outline" onclick="generaTuttiDriveOnly()" id="btnDriveOnly"
+                    style="border-color:#6ee7b7;color:#6ee7b7;">
+              ☁️ Genera + Drive
+            </button>
+            <span style="font-size:0.68rem;color:#64748b;text-align:center;">senza email · usa scheduler</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <button class="btn btn-gold" onclick="confermaInvioEmail()" id="btnDriveEmail">
+              🚀 Genera + Drive + Email
+            </button>
+            <span style="font-size:0.68rem;color:#64748b;text-align:center;">carica + invia email subito</span>
+          </div>
+        </div>
+      </div>
+      <div class="selezione-bar">
+        <button class="btn-sel" onclick="selezionaTutti()">☑ Tutti</button>
+        <button class="btn-sel" onclick="deselezionaTutti()">☐ Nessuno</button>
+        <span id="selezioneInfo" style="color:var(--lk-text-muted);"></span>
+      </div>
+      <div id="squadreList"></div>
+    </div>
+
+    <!-- PANNELLO SCHEDULER EMAIL -->
+    <div class="card" style="margin-top:1.5rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+        <div class="card-title" style="margin-bottom:0;">⏰ Pianifica invio email automatico</div>
+        <button class="btn btn-outline" onclick="caricaTrigger()" style="font-size:0.8rem;">🔄 Aggiorna</button>
+      </div>
+
+      <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:10px;padding:0.9rem 1rem;margin-bottom:1.25rem;font-size:0.85rem;color:#94a3b8;line-height:1.6;">
+        ℹ️ Prima genera i PDF su Drive con <strong style="color:#6ee7b7;">☁️ Genera + Drive</strong> (senza email — i PDF vengono caricati su Drive e la lista docenti viene salvata automaticamente). Poi setta qui data/ora per l'invio automatico. <strong style="color:#f87171;">Non usare 🚀 Genera + Drive + Email</strong> se vuoi usare lo scheduler: le email verrebbero inviate due volte.
+      </div>
+
+      <div style="display:flex;gap:1rem;align-items:flex-end;flex-wrap:wrap;margin-bottom:1.25rem;">
+        <div class="form-group" style="flex:1;min-width:180px;">
+          <label>Gara selezionata</label>
+          <div id="schedGaraNome" style="background:rgba(15,23,42,0.7);border:1px solid #334155;border-radius:8px;padding:0.65rem 0.85rem;color:#64748b;font-size:0.875rem;">— Nessuna gara caricata —</div>
+        </div>
+        <div class="form-group" style="flex:1;min-width:180px;">
+          <label>Data e ora invio email</label>
+          <input id="schedDataOra" type="datetime-local" class="form-input">
+        </div>
+        <button class="btn btn-primary" onclick="pianificaInvio()" id="btnPianifica" style="white-space:nowrap;align-self:flex-end;">
+          ⏰ Pianifica
+        </button>
+      </div>
+
+      <div style="font-size:0.78rem;font-weight:700;color:#cbd5e1;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:0.6rem;">📋 Trigger attivi</div>
+      <div id="triggerList" style="color:#64748b;font-size:0.875rem;font-style:italic;">Premi 🔄 Aggiorna per caricare.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODALE INFO -->
+<div id="modalInfo" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9000;overflow-y:auto;">
+  <div style="max-width:560px;margin:60px auto;background:#1e293b;border:1px solid #334155;border-radius:16px;padding:2rem;">
+    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.5rem;">
+      <span style="font-size:1.5rem;">📜</span>
+      <h2 style="font-size:1.1rem;font-weight:700;">Come funziona — Guida Attestati</h2>
+      <button onclick="document.getElementById('modalInfo').style.display='none'"
+              style="margin-left:auto;background:transparent;border:1px solid #334155;color:#94a3b8;
+                     padding:0.3rem 0.8rem;border-radius:8px;cursor:pointer;font-size:0.85rem;">✕ Chiudi</button>
+    </div>
+
+    <div style="font-size:0.9rem;color:#e2e8f0;line-height:1.7;">
+
+      <p style="font-weight:700;color:#fbbf24;margin-bottom:0.5rem;">🚀 FLUSSO COMPLETO (prima volta)</p>
+      <ol style="margin:0 0 1.25rem 1.2rem;color:#cbd5e1;">
+        <li>Seleziona la gara e compila <em>Dirigente</em>, <em>Referente</em>, <em>Data cerimonia</em></li>
+        <li>Clicca <strong>Carica dati gara</strong> e verifica i nomi degli alunni</li>
+        <li>Clicca <strong>🚀 Genera + Drive + Email</strong></li>
+        <li>Il sistema genera ogni PDF, lo salva su Drive nella cartella giusta e alla fine invia un'email per ogni docente con i PDF allegati</li>
+        <li>Struttura Drive: <code style="background:#0f172a;padding:1px 5px;border-radius:4px;">ATTESTATI / [Primaria Nª] / [IC] / [Plesso] / [Nª Sez]</code></li>
+      </ol>
+
+      <p style="font-weight:700;color:#6ee7b7;margin-bottom:0.5rem;">✏️ CORREGGERE UN NOME ERRATO (singolo alunno)</p>
+      <ol style="margin:0 0 1.25rem 1.2rem;color:#cbd5e1;">
+        <li>Trova l'alunno nella lista e clicca <strong>✏️</strong> (icona matita) accanto al suo nome</li>
+        <li>Digita il nome corretto nel campo e clicca <strong>✅ Salva tutto</strong></li>
+        <li>Il sistema aggiorna automaticamente lo Sheet, rigenera il PDF e lo sostituisce su Drive</li>
+      </ol>
+
+      <div style="background:#7c3aed22;border:1px solid #7c3aed55;border-radius:8px;padding:0.85rem;margin-bottom:1rem;">
+        <p style="margin:0;font-weight:600;color:#c4b5fd;">⚠️ Dopo la correzione con ✏️:</p>
+        <ul style="margin:0.5rem 0 0 1.1rem;color:#cbd5e1;">
+          <li>Lo Sheet Iscrizioni viene <strong>aggiornato automaticamente</strong></li>
+          <li>Il vecchio file su Drive viene <strong>cancellato e sostituito</strong> con quello nuovo</li>
+          <li>La mail <strong>NON viene reinviata</strong> automaticamente alla docente</li>
+          <li>Dovrai inviare <strong>tu manualmente</strong> la mail con il nuovo attestato alla docente interessata</li>
+        </ul>
+      </div>
+
+      <p style="font-weight:700;color:#93c5fd;margin-bottom:0.5rem;">📄 SCARICA SOLO IN LOCALE</p>
+      <p style="margin:0 0 1.25rem;color:#94a3b8;">Il pulsante <strong>⬇️ Scarica tutti (locale)</strong> e il pulsante <strong>📄 PDF</strong> scaricano solo sul tuo PC — nulla viene salvato su Drive né inviato per email. Utile per anteprima rapida.</p>
+
+      <p style="font-weight:700;color:#fbbf24;margin-bottom:0.5rem;">⏰ PIANIFICA INVIO EMAIL AUTOMATICO</p>
+      <ol style="margin:0 0 1rem 1.2rem;color:#cbd5e1;">
+        <li>Clicca <strong style="color:#6ee7b7;">☁️ Genera + Drive</strong> — i PDF vengono caricati su Drive e il sistema salva automaticamente la lista dei docenti da notificare. <strong>Le email NON vengono inviate.</strong></li>
+        <li>Nel pannello <strong>⏰ Pianifica invio email automatico</strong> in fondo alla pagina, scegli data e ora</li>
+        <li>Clicca <strong>⏰ Pianifica</strong> — viene creato un trigger automatico sul server</li>
+        <li>All'ora impostata, il server invierà le email ai docenti <strong>senza che tu debba fare nulla e senza che il PC sia acceso</strong></li>
+      </ol>
+      <div style="background:#dc262622;border:1px solid #dc262655;border-radius:8px;padding:0.85rem;margin-bottom:0.5rem;font-size:0.85rem;color:#94a3b8;line-height:1.6;">
+        ⚠️ <strong style="color:#fca5a5;">Non usare 🚀 Genera + Drive + Email se vuoi pianificare lo scheduler</strong> — quel pulsante invia le email subito. Se lo usi e poi pianifichi anche il trigger, le email vengono inviate <strong>due volte</strong>.<br><br>
+        💡 <strong style="color:#e2e8f0;">Utile per le gare programmate:</strong> genera i PDF appena finisce la gara con ☁️, pianifica l'invio per il giorno dopo alle 9:00, poi dimentica — ci pensa il sistema.<br>
+        🗑 Puoi cancellare o ripianificare il trigger in qualsiasi momento dalla lista <strong>📋 Trigger attivi</strong>.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE CONFIRM SINGOLO DRIVE -->
+<div id="modalConfirmDrive" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9000;">
+  <div style="max-width:420px;margin:180px auto;background:#1e293b;border:1px solid #334155;border-radius:16px;padding:2rem;">
+    <p style="font-size:1rem;font-weight:700;margin-bottom:0.75rem;">☁️ Salva su Drive — Conferma</p>
+    <p id="confirmDriveNome" style="color:#fbbf24;font-weight:600;margin-bottom:1rem;"></p>
+    <div style="background:#7c3aed22;border:1px solid #7c3aed55;border-radius:8px;padding:0.85rem;margin-bottom:1rem;font-size:0.875rem;color:#cbd5e1;line-height:1.6;">
+      Il file su Drive verrà <strong>rigenerato, cancellato e sovrascritto</strong>.<br>
+      La mail <strong>NON verrà reinviata</strong> automaticamente alla docente.<br>
+      Dovrai inviare <strong>tu manualmente</strong> la mail con il nuovo attestato alla docente interessata.
+    </div>
+    <div style="margin-bottom:1.25rem;">
+      <label style="font-size:0.78rem;color:#94a3b8;display:block;margin-bottom:4px;">
+        Stai correggendo un nome errato? Scrivi il <strong style="color:#fbbf24;">vecchio nome</strong> da eliminare su Drive (lascia vuoto se il nome non è cambiato):
+      </label>
+      <input id="confirmDriveVecchioNome" type="text" placeholder="es. Mario Rossi"
+        style="width:100%;padding:6px 10px;border:1px solid #475569;border-radius:7px;background:#0f172a;color:#e2e8f0;font-size:0.875rem;box-sizing:border-box;">
+    </div>
+    <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+      <button onclick="document.getElementById('modalConfirmDrive').style.display='none'"
+              style="background:transparent;border:1px solid #334155;color:#94a3b8;padding:0.5rem 1.1rem;border-radius:8px;cursor:pointer;">
+        Annulla
+      </button>
+      <button id="btnConfirmDriveOk"
+              style="background:linear-gradient(135deg,#6366f1,#7c3aed);color:#fff;border:none;padding:0.5rem 1.25rem;border-radius:8px;cursor:pointer;font-weight:600;">
+        ✓ Procedi
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE CONFIRM INVIO EMAIL MASSIVO -->
+<div id="modalConfirmEmail" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:9500;">
+  <div style="max-width:440px;margin:140px auto;background:#1e293b;border:2px solid #f87171;border-radius:16px;padding:2rem;">
+    <div style="text-align:center;font-size:2rem;margin-bottom:0.5rem;">📧</div>
+    <p style="font-size:1rem;font-weight:700;color:#f87171;text-align:center;margin-bottom:1rem;">Stai per inviare email a tutti i docenti</p>
+    <div style="background:#dc262618;border:1px solid #dc262644;border-radius:8px;padding:0.9rem;margin-bottom:1.25rem;font-size:0.875rem;color:#cbd5e1;line-height:1.7;">
+      Il sistema genererà i PDF, li caricherà su Drive e <strong>invierà subito le email a tutti i docenti delle squadre iscritte</strong>.<br><br>
+      ⚠️ <strong style="color:#fca5a5;">Questa operazione non è annullabile.</strong><br>
+      Se vuoi solo caricare su Drive senza inviare email, annulla e usa <strong style="color:#6ee7b7;">☁️ Genera + Drive</strong>.
+    </div>
+    <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+      <button onclick="document.getElementById('modalConfirmEmail').style.display='none'"
+              style="background:transparent;border:1px solid #334155;color:#94a3b8;padding:0.5rem 1.1rem;border-radius:8px;cursor:pointer;">
+        ✕ Annulla
+      </button>
+      <button onclick="document.getElementById('modalConfirmEmail').style.display='none';generaTuttiDriveEmail()"
+              style="background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;border:none;padding:0.5rem 1.25rem;border-radius:8px;cursor:pointer;font-weight:700;">
+        🚀 Sì, invia le email
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALE EDIT NOME ALUNNO -->
+<div id="modalEditNome" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9200;">
+  <div style="max-width:400px;margin:160px auto;background:#1e293b;border:1px solid #334155;border-radius:16px;padding:2rem;">
+    <p style="font-size:1rem;font-weight:700;margin-bottom:0.25rem;">✏️ Modifica nome alunno</p>
+    <p id="editNomeSquadra" style="font-size:0.8rem;color:#64748b;margin-bottom:1.25rem;"></p>
+    <div style="margin-bottom:1rem;">
+      <label style="font-size:0.78rem;color:#94a3b8;display:block;margin-bottom:4px;">Nuovo nome</label>
+      <input id="editNomeInput" type="text"
+             onkeypress="if(event.key==='Enter') salvaEditNome()"
+             style="width:100%;padding:8px 12px;border:1px solid #475569;border-radius:7px;background:#0f172a;color:#e2e8f0;font-size:0.95rem;box-sizing:border-box;">
+    </div>
+    <div style="background:#1e40af22;border:1px solid #1e40af55;border-radius:8px;padding:0.75rem;margin-bottom:1.25rem;font-size:0.82rem;color:#93c5fd;line-height:1.5;">
+      Il nome verrà <strong>aggiornato nello Sheet</strong> e l'attestato verrà <strong>rigenerato e sostituito su Drive</strong> (se era già stato caricato). La mail <strong>non</strong> verrà reinviata automaticamente.
+    </div>
+    <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+      <button onclick="document.getElementById('modalEditNome').style.display='none'"
+              style="background:transparent;border:1px solid #334155;color:#94a3b8;padding:0.5rem 1.1rem;border-radius:8px;cursor:pointer;">
+        Annulla
+      </button>
+      <button id="btnSalvaEditNome" onclick="salvaEditNome()"
+              style="background:linear-gradient(135deg,#6366f1,#7c3aed);color:#fff;border:none;padding:0.5rem 1.25rem;border-radius:8px;cursor:pointer;font-weight:600;">
+        ✅ Salva tutto
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- html2canvas rimosso: generazione PDF ora usa Canvas2D diretto (molto più veloce) -->
+<script>
+  const ADMIN_PASSWORD = 'logikron2025';
+  const API_CF = LOGIKRON_CONFIG.apiUrl;                    // Cloudflare: dati gara
+  const API_AS = LOGIKRON_CONFIG.webAppUrls.admin;          // Apps Script: email + Drive
+
+  let adminPwd = '';
+  let _datiAttest = []; // [{squadra, posizione, tipo, istituto, plesso, ordine, classe, sezione, docente, email, alunni:[]}]
+  let _garaNome = '';
+  let _garaId   = '';
+  let _imgCache  = {}; // { name: base64 }
+  let _imgDim    = {}; // { name: {w, h} }
+  let _imgElCache = {}; // { name: HTMLImageElement } — pronti per drawImage() senza ricaricare
+
+  // ===================== LOGIN =====================
+
+  function doLogin() {
+    const v = document.getElementById('loginPwd').value;
+    if (v === ADMIN_PASSWORD) {
+      adminPwd = v;
+      sessionStorage.setItem('lkAttestati', 'true');
+      document.getElementById('loginPanel').style.display = 'none';
+      document.getElementById('mainPanel').style.display = 'block';
+      init();
+    } else {
+      document.getElementById('loginError').style.display = 'block';
+    }
+  }
+
+  if (sessionStorage.getItem('lkAttestati') === 'true' || sessionStorage.getItem('logikronAdmin') === 'true') {
+    adminPwd = ADMIN_PASSWORD;
+    document.getElementById('loginPanel').style.display = 'none';
+    document.getElementById('mainPanel').style.display = 'block';
+  }
+
+  // ===================== INIT =====================
+
+  function init() {
+    document.getElementById('annoScolastico').value = LOGIKRON_CONFIG.annoScolastico;
+    loadConfig();
+    caricaGare();
+    preloadImmagini();
+    // Inizializza auth Drive (GIS potrebbe non essere ancora caricato — riprova dopo 1s se serve)
+    if (typeof google !== 'undefined' && google.accounts) { initDriveAuth(); }
+    else { setTimeout(initDriveAuth, 1000); }
+  }
+
+  function loadConfig() {
+    const c = JSON.parse(localStorage.getItem('lkAttestatiConfig') || '{}');
+    if (c.nomeDS)         document.getElementById('nomeDS').value = c.nomeDS;
+    if (c.nomeRef)        document.getElementById('nomeRef').value = c.nomeRef;
+    if (c.dataCerimonia)  document.getElementById('dataCerimonia').value = c.dataCerimonia;
+  }
+
+  function saveConfig() {
+    localStorage.setItem('lkAttestatiConfig', JSON.stringify({
+      nomeDS:         document.getElementById('nomeDS').value,
+      nomeRef:        document.getElementById('nomeRef').value,
+      dataCerimonia:  document.getElementById('dataCerimonia').value
+    }));
+  }
+
+  // ===================== PRE-CARICA IMMAGINI =====================
+
+  async function preloadImmagini() {
+    const imgs = ['sfondo', 'logo-logikron', 'logo-stato', 'timbro'];
+    await Promise.all(imgs.map(async function(name) {
+      try {
+        const url = './assets/attestati/' + name + '.png';
+        const resp = await fetch(url);
+        const blob = await resp.blob();
+        const b64 = await blobToBase64(blob);
+        _imgCache[name] = b64;
+        await new Promise(function(resolve) {
+          const img = new Image();
+          img.onload = function() {
+            _imgDim[name] = { w: img.width, h: img.height };
+            _imgElCache[name] = img; // salva elemento già pronto per drawImage()
+            resolve();
+          };
+          img.src = b64;
+        });
+      } catch(e) {
+        console.warn('Immagine non caricata:', name, e);
+      }
+    }));
+  }
+
+  function blobToBase64(blob) {
+    return new Promise(function(resolve) {
+      const r = new FileReader();
+      r.onload = function() { resolve(r.result); };
+      r.readAsDataURL(blob);
+    });
+  }
+
+  // ===================== GARE =====================
+
+  function caricaGare() {
+    lkApi(API_CF, { action: 'getListaGare' })
+      .then(function(gare) {
+        const sel = document.getElementById('selGara');
+        sel.innerHTML = '<option value="">— Seleziona gara —</option>';
+        // Mostra prima le gare terminate
+        gare.sort(function(a,b) {
+          const ord = { terminata:0, attiva:1, creata:2 };
+          return (ord[a.stato]??9) - (ord[b.stato]??9) || (b.oraFine||'').localeCompare(a.oraFine||'');
+        });
+        gare.forEach(function(g) {
+          const opt = document.createElement('option');
+          opt.value = g.id;
+          const stato = g.stato === 'terminata' ? '✅' : g.stato === 'attiva' ? '🔴' : '⚪';
+          opt.textContent = stato + ' ' + g.nome + (g.oraFine ? ' (' + g.oraFine.substring(0,10) + ')' : '');
+          sel.appendChild(opt);
+        });
+        // Auto-seleziona prima terminata
+        const prima = gare.find(function(g){ return g.stato === 'terminata'; });
+        if (prima) { sel.value = prima.id; onGaraChange(); }
+      })
+      .catch(function(e){ toast('Errore carica gare: ' + e.message); });
+  }
+
+  function onGaraChange() {
+    const v = document.getElementById('selGara').value;
+    document.getElementById('btnCarica').disabled = !v;
+    document.getElementById('squadrePanel').style.display = 'none';
+    document.getElementById('emptyMsg').style.display = 'none';
+    _datiAttest = [];
+  }
+
+  // ===================== CARICA DATI =====================
+
+  function caricaDati() {
+    const garaId = document.getElementById('selGara').value;
+    if (!garaId) return;
+    _garaId = garaId;
+
+    const selEl = document.getElementById('selGara');
+    _garaNome = selEl.options[selEl.selectedIndex].textContent.replace(/^[✅🔴⚪]\s*/,'').split(' (')[0];
+
+    document.getElementById('loadingMsg').style.display = 'block';
+    document.getElementById('squadrePanel').style.display = 'none';
+    document.getElementById('emptyMsg').style.display = 'none';
+    document.getElementById('btnCarica').disabled = true;
+
+    Promise.all([
+      lkApi(API_CF, { action: 'getTabellone', garaId: garaId }),
+      lkApi(API_CF, { action: 'getIscrizioni', pwd: adminPwd })
+    ]).then(function(results) {
+      const tabellone = results[0];
+      const iscrizioni = results[1];
+
+      document.getElementById('loadingMsg').style.display = 'none';
+      document.getElementById('btnCarica').disabled = false;
+
+      if (!tabellone.squadre || tabellone.squadre.length === 0) {
+        document.getElementById('emptyMsg').style.display = 'block';
+        return;
+      }
+
+      // Mappa iscrizioni per nome squadra
+      const iscMap = {};
+      (iscrizioni || []).forEach(function(isc) {
+        iscMap[isc.nomeSquadra] = isc;
+      });
+
+      // Costruisce dati attestati (squadre già ordinate per punti)
+      _datiAttest = tabellone.squadre.map(function(sq, idx) {
+        const isc = iscMap[sq.nome] || {};
+        const studenti = typeof isc.studenti === 'string'
+          ? isc.studenti.split(';').map(function(s){ return s.trim(); }).filter(Boolean)
+          : [];
+        return {
+          squadra:   sq.nome,
+          posizione: idx + 1,
+          punti:     sq.punti,
+          tipo:      idx === 0 ? 'Merito' : 'Partecipazione',
+          istituto:  isc.istituto || '',
+          plesso:    isc.plesso   || '',
+          ordine:    isc.ordine   || '',
+          classe:    isc.classe   || '',
+          sezione:   isc.sezione  || '',
+          docente:   isc.docente  || '',
+          email:     isc.email    || '',
+          alunni:    studenti
+        };
+      });
+
+      renderSquadre();
+      aggiornSchedGara();
+
+    }).catch(function(e) {
+      document.getElementById('loadingMsg').style.display = 'none';
+      document.getElementById('btnCarica').disabled = false;
+      toast('Errore: ' + e.message);
+    });
+  }
+
+  // ===================== RENDER SQUADRE =====================
+
+  function renderSquadre() {
+    const list = document.getElementById('squadreList');
+    list.innerHTML = '';
+
+    const totAlunni = _datiAttest.reduce(function(s,sq){ return s + sq.alunni.length; }, 0);
+
+    _datiAttest.forEach(function(sq, sqIdx) {
+      const block = document.createElement('div');
+      block.className = 'squadra-block';
+      block.id = 'sq-block-' + sqIdx;
+
+      const posBadge = sq.posizione === 1
+        ? '<span class="pos-badge pos-1">' + sq.posizione + '</span>'
+        : '<span class="pos-badge pos-other">' + sq.posizione + '</span>';
+
+      const attBadge = sq.tipo === 'Merito'
+        ? '<span class="att-badge att-merito">🏆 Merito</span>'
+        : '<span class="att-badge att-partecipazione">📜 Partecipazione</span>';
+
+      const infoTxt = [sq.istituto, sq.plesso, sq.ordine === 'primaria' ? 'Primaria' : 'Secondaria', 'Cl. ' + sq.classe + sq.sezione]
+        .filter(Boolean).join(' · ');
+
+      block.innerHTML = `
+        <div class="squadra-header" onclick="toggleSquadra(${sqIdx})">
+          <input type="checkbox" id="sq-check-${sqIdx}" class="sq-checkbox" checked
+                 onclick="event.stopPropagation()"
+                 onchange="toggleSelezioneSquadra(${sqIdx}, this.checked)"
+                 title="Seleziona/deseleziona tutta la squadra">
+          ${posBadge}
+          <div>
+            <div class="squadra-nome">${_esc(sq.squadra)}</div>
+            <div style="font-size:0.75rem;color:var(--lk-text-muted);margin-top:2px;">${_esc(infoTxt)}</div>
+          </div>
+          ${attBadge}
+          <div class="squadra-info">
+            <span class="n-alunni">${sq.alunni.length} alunni</span>
+            <button class="btn btn-sm btn-outline" onclick="event.stopPropagation();scaricaSquadra(${sqIdx})">⬇️ Tutti</button>
+            <span class="chevron">▼</span>
+          </div>
+        </div>
+        <div class="alunni-list" id="alunni-${sqIdx}">
+          ${sq.alunni.map(function(nome, aIdx) {
+            return `<div class="alunno-row">
+              <input type="checkbox" id="al-check-${sqIdx}-${aIdx}" class="al-checkbox" checked
+                     onchange="aggiornaCheckSquadra(${sqIdx})">
+              <span class="alunno-nome">${_esc(nome)}</span>
+              <span class="alunno-tipo" style="color:${sq.tipo==='Merito'?'#fbbf24':'#a5b4fc'}">${sq.tipo}</span>
+              <button class="btn btn-sm btn-outline" onclick="apriEditNome(${sqIdx},${aIdx})" title="Modifica nome alunno">✏️</button>
+              <button class="btn btn-sm btn-outline" onclick="scaricaSingolo(${sqIdx},${aIdx},this)">📄 PDF</button>
+              <button class="btn btn-sm btn-outline" onclick="salvaAlunnoDrive(${sqIdx},${aIdx},this)" title="Salva/Sovrascivi su Drive (no email)">☁️</button>
+            </div>`;
+          }).join('')}
+        </div>`;
+
+      list.appendChild(block);
+    });
+
+    document.getElementById('squadrePanel').style.display = 'block';
+    aggiornaCounterSelezione();
+    // Apre automaticamente la prima squadra
+    toggleSquadra(0);
+  }
+
+  function toggleSquadra(idx) {
+    const block = document.getElementById('sq-block-' + idx);
+    block.classList.toggle('open');
+  }
+
+  // ===================== SELEZIONE ATTESTATI =====================
+
+  function getListaSelezionati() {
+    const lista = [];
+    _datiAttest.forEach(function(sq, sqIdx) {
+      sq.alunni.forEach(function(nome, aIdx) {
+        const cb = document.getElementById('al-check-' + sqIdx + '-' + aIdx);
+        if (cb && cb.checked) lista.push({ sq: sq, nome: nome });
+      });
+    });
+    return lista;
+  }
+
+  function toggleSelezioneSquadra(sqIdx, checked) {
+    _datiAttest[sqIdx].alunni.forEach(function(nome, aIdx) {
+      const cb = document.getElementById('al-check-' + sqIdx + '-' + aIdx);
+      if (cb) cb.checked = checked;
+    });
+    aggiornaCounterSelezione();
+  }
+
+  function aggiornaCheckSquadra(sqIdx) {
+    const sqCb = document.getElementById('sq-check-' + sqIdx);
+    if (!sqCb) return;
+    const alCbs = _datiAttest[sqIdx].alunni.map(function(nome, aIdx) {
+      return document.getElementById('al-check-' + sqIdx + '-' + aIdx);
+    }).filter(Boolean);
+    const n = alCbs.filter(function(cb) { return cb.checked; }).length;
+    if (n === 0)            { sqCb.checked = false; sqCb.indeterminate = false; }
+    else if (n === alCbs.length) { sqCb.checked = true;  sqCb.indeterminate = false; }
+    else                         { sqCb.checked = false; sqCb.indeterminate = true;  }
+    aggiornaCounterSelezione();
+  }
+
+  function aggiornaCounterSelezione() {
+    const sel = getListaSelezionati();
+    const tot = _datiAttest.reduce(function(s, sq) { return s + sq.alunni.length; }, 0);
+    document.getElementById('riepilogoCount').textContent =
+      _datiAttest.length + ' squadre · ' + tot + ' alunni';
+    document.getElementById('selezioneInfo').textContent =
+      sel.length === tot
+        ? '✓ Tutti selezionati'
+        : sel.length + ' / ' + tot + ' selezionati';
+  }
+
+  function selezionaTutti() {
+    _datiAttest.forEach(function(sq, sqIdx) {
+      sq.alunni.forEach(function(nome, aIdx) {
+        const cb = document.getElementById('al-check-' + sqIdx + '-' + aIdx);
+        if (cb) cb.checked = true;
+      });
+      const sqCb = document.getElementById('sq-check-' + sqIdx);
+      if (sqCb) { sqCb.checked = true; sqCb.indeterminate = false; }
+    });
+    aggiornaCounterSelezione();
+  }
+
+  function deselezionaTutti() {
+    _datiAttest.forEach(function(sq, sqIdx) {
+      sq.alunni.forEach(function(nome, aIdx) {
+        const cb = document.getElementById('al-check-' + sqIdx + '-' + aIdx);
+        if (cb) cb.checked = false;
+      });
+      const sqCb = document.getElementById('sq-check-' + sqIdx);
+      if (sqCb) { sqCb.checked = false; sqCb.indeterminate = false; }
+    });
+    aggiornaCounterSelezione();
+  }
+
+  // ===================== GENERAZIONE PDF =====================
+
+  function getCampi() {
+    return {
+      nomeDS:        document.getElementById('nomeDS').value.trim() || 'Il Dirigente Scolastico',
+      nomeRef:       document.getElementById('nomeRef').value.trim() || 'Il Referente',
+      dataCerimonia: document.getElementById('dataCerimonia').value
+        ? formatData(document.getElementById('dataCerimonia').value)
+        : formatData(new Date().toISOString().split('T')[0]),
+      annoScolastico: LOGIKRON_CONFIG.annoScolastico,
+      edizioni: LOGIKRON_CONFIG.edizioneCorrente || (LOGIKRON_CONFIG.totaleStorico.edizioni + 1)
+    };
+  }
+
+  function formatData(isoDate) {
+    const mesi = ['gennaio','febbraio','marzo','aprile','maggio','giugno',
+                  'luglio','agosto','settembre','ottobre','novembre','dicembre'];
+    const p = isoDate.split('-');
+    return parseInt(p[2]) + ' ' + mesi[parseInt(p[1])-1] + ' ' + p[0];
+  }
+
+  function ordinale(n) {
+    if (n === 1) return '1ª';
+    if (n === 2) return '2ª';
+    if (n === 3) return '3ª';
+    return n + 'ª';
+  }
+
+  function scaricaSingolo(sqIdx, aIdx, btn) {
+    const sq = _datiAttest[sqIdx];
+    const nome = sq.alunni[aIdx];
+    const orig = btn.textContent;
+    btn.disabled = true; btn.textContent = '⏳';
+    generaPDF(sq, nome)
+      .then(function(doc) {
+        doc.save(nome.replace(/\s+/g,'_') + '_attestato.pdf');
+        btn.disabled = false; btn.textContent = orig;
+      })
+      .catch(function(e) {
+        btn.disabled = false; btn.textContent = orig;
+        toast('Errore PDF: ' + e.message);
+      });
+  }
+
+  function scaricaSquadra(sqIdx) {
+    const sq = _datiAttest[sqIdx];
+    scaricaLista(sq.alunni.map(function(nome){ return {sq, nome}; }), 0);
+  }
+
+  async function scaricaTutti() {
+    const lista = getListaSelezionati();
+    if (lista.length === 0) { toast('Nessun alunno selezionato.'); return; }
+
+    const btn = document.getElementById('btnTutti');
+    btn.disabled = true;
+    document.getElementById('progressWrap').style.display = 'block';
+    document.getElementById('progressBar').style.width = '0%';
+    showBigProgress('Generazione PDF in corso...');
+
+    for (let i = 0; i < lista.length; i++) {
+      const label = 'Generazione ' + (i+1) + '/' + lista.length + ' — ' + lista[i].nome;
+      const pct = Math.round((i/lista.length)*100);
+      document.getElementById('progressLabel').textContent = label;
+      document.getElementById('progressBar').style.width = pct + '%';
+      updateBigProgress(label, pct);
+
+      try {
+        const doc = await generaPDF(lista[i].sq, lista[i].nome);
+        doc.save(lista[i].nome.replace(/\s+/g,'_') + '_attestato.pdf');
+      } catch(e) {
+        console.error('Errore PDF per', lista[i].nome, e);
+      }
+
+      // Pausa tra un PDF e l'altro (evita di stallare il browser)
+      await new Promise(function(r){ setTimeout(r, 300); });
+    }
+
+    document.getElementById('progressBar').style.width = '100%';
+    document.getElementById('progressLabel').textContent = '✅ ' + lista.length + ' PDF generati!';
+    updateBigProgress('✅ ' + lista.length + ' PDF generati!', 100);
+    btn.disabled = false;
+    setTimeout(function(){ document.getElementById('progressWrap').style.display = 'none'; hideBigProgress(); }, 4000);
+    toast('✅ Tutti i ' + lista.length + ' attestati scaricati!');
+  }
+
+  function scaricaLista(lista, i) {
+    if (i >= lista.length) return;
+    generaPDF(lista[i].sq, lista[i].nome)
+      .then(function(doc){
+        doc.save(lista[i].nome.replace(/\s+/g,'_') + '_attestato.pdf');
+        setTimeout(function(){ scaricaLista(lista, i+1); }, 300);
+      });
+  }
+
+  // ===================== BADGE CANVAS =====================
+
+  function creaImgBadge(edizioni) {
+    const canvas = document.createElement('canvas');
+    const SIZE = 220;
+    canvas.width = SIZE; canvas.height = SIZE;
+    const ctx = canvas.getContext('2d');
+    const cx = SIZE/2, cy = SIZE/2, R = SIZE/2 - 4;
+
+    // Ombra esterna
+    ctx.shadowColor = 'rgba(0,0,0,0.45)';
+    ctx.shadowBlur = 10; ctx.shadowOffsetX = 2; ctx.shadowOffsetY = 3;
+
+    // Anello esterno oro
+    const gOut = ctx.createRadialGradient(cx - R*0.25, cy - R*0.25, R*0.1, cx, cy, R);
+    gOut.addColorStop(0, '#ffe070'); gOut.addColorStop(0.45, '#c8900a'); gOut.addColorStop(1, '#6b4800');
+    ctx.fillStyle = gOut;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI*2); ctx.fill();
+    ctx.shadowColor = 'transparent';
+
+    // 10 stelline sull'anello
+    for (let i = 0; i < 10; i++) {
+      const a = (i/10) * Math.PI*2 - Math.PI/2;
+      const sx = cx + (R - 12) * Math.cos(a), sy = cy + (R - 12) * Math.sin(a);
+      _drawStar(ctx, sx, sy, 5.5, 2.2, 5, '#fff5aa');
+    }
+
+    // Cerchio interno scuro
+    ctx.fillStyle = '#7a5500';
+    ctx.beginPath(); ctx.arc(cx, cy, R*0.73, 0, Math.PI*2); ctx.fill();
+
+    // Cerchio interno illuminato
+    const gIn = ctx.createRadialGradient(cx-6, cy-8, 4, cx, cy, R*0.68);
+    gIn.addColorStop(0, '#f8d860'); gIn.addColorStop(0.55, '#c08a08'); gIn.addColorStop(1, '#7a5500');
+    ctx.fillStyle = gIn;
+    ctx.beginPath(); ctx.arc(cx, cy, R*0.68, 0, Math.PI*2); ctx.fill();
+
+    // Filetto interno
+    ctx.strokeStyle = '#ffe880'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(cx, cy, R*0.68, 0, Math.PI*2); ctx.stroke();
+
+    // Numero edizione
+    const nStr = ordinale(edizioni);
+    ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 3;
+    ctx.fillStyle = '#fff8d0'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.font = 'bold 60px Georgia, serif';
+    ctx.fillText(nStr, cx, cy + 10);
+    ctx.shadowColor = 'transparent';
+
+    // Lineette decorative
+    ctx.strokeStyle = '#fff5aa'; ctx.lineWidth = 1.5;
+    const lw = R * 0.33;
+    ctx.beginPath(); ctx.moveTo(cx - lw, cy + 22); ctx.lineTo(cx - 9, cy + 22); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx + 9, cy + 22); ctx.lineTo(cx + lw, cy + 22); ctx.stroke();
+
+    // "EDIZIONE"
+    ctx.fillStyle = '#fff5aa'; ctx.font = 'bold 19px Georgia, serif';
+    ctx.fillText('EDIZIONE', cx, cy + 44);
+
+    return canvas.toDataURL('image/png');
+  }
+
+  function _drawStar(ctx, cx, cy, rOut, rIn, nPts, color) {
+    ctx.fillStyle = color; ctx.beginPath();
+    for (let i = 0; i < nPts*2; i++) {
+      const r = i%2===0 ? rOut : rIn;
+      const a = (i/(nPts*2)) * Math.PI*2 - Math.PI/2;
+      i===0 ? ctx.moveTo(cx+r*Math.cos(a), cy+r*Math.sin(a)) : ctx.lineTo(cx+r*Math.cos(a), cy+r*Math.sin(a));
+    }
+    ctx.closePath(); ctx.fill();
+  }
+
+  // ===================== GENERA SINGOLO PDF =====================
+
+  async function generaPDF(sq, nomeAlunno) {
+    // Normalizza in Title Case se il nome è tutto maiuscolo
+    if (nomeAlunno && nomeAlunno === nomeAlunno.toUpperCase()) {
+      nomeAlunno = nomeAlunno.toLowerCase().replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+    }
+    const { jsPDF } = window.jspdf;
+    const campi = getCampi();
+    const isMerito = sq.tipo === 'Merito';
+
+    // Forza il caricamento dei font Google (una volta sola, poi browser li tiene in cache)
+    await Promise.all([
+      document.fonts.load('400 16px "Special Elite"'),
+      document.fonts.load('400 16px "Playfair Display"'),
+      document.fonts.load('700 16px "Playfair Display"'),
+      document.fonts.load('italic 700 16px "Playfair Display"'),
+      document.fonts.load('400 16px "EB Garamond"'),
+      document.fonts.load('600 16px "EB Garamond"'),
+      document.fonts.load('400 16px "Great Vibes"'),
+    ]).catch(function(){});
+
+    // Canvas2D diretto — niente html2canvas, niente DOM, molto più veloce
+    const W = 1122, H = 794, S = 2; // S=2 → 192 DPI su A4
+    const canvas = document.createElement('canvas');
+    canvas.width = W * S; canvas.height = H * S;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(S, S);
+
+    // Helper: carica un'immagine da base64 come HTMLImageElement (usa cache se disponibile)
+    function loadImgEl(name) {
+      return new Promise(function(resolve) {
+        if (_imgElCache[name]) { resolve(_imgElCache[name]); return; }
+        if (!_imgCache[name])  { resolve(null); return; }
+        const img = new Image();
+        img.onload  = function() { _imgElCache[name] = img; resolve(img); };
+        img.onerror = function() { resolve(null); };
+        img.src = _imgCache[name];
+      });
+    }
+
+    // ── Sfondo bianco + immagine di sfondo ──
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+    const bgImg = await loadImgEl('sfondo');
+    if (bgImg) ctx.drawImage(bgImg, 0, 0, W, H);
+
+    // ── Logo stato (Repubblica) ──
+    const logoStato = await loadImgEl('logo-stato');
+    if (logoStato) ctx.drawImage(logoStato, 70, 72, 65, 65);
+
+    // ── "Ministero dell'Istruzione e del Merito" (sinistra, 3 righe) ──
+    ctx.fillStyle = '#1a1a1a';
+    ctx.font = '17px "Special Elite", monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText("Ministero", 145, 74);
+    ctx.fillText("dell\u2019Istruzione", 145, 74 + 26);
+    ctx.fillText("e del Merito", 145, 74 + 52);
+
+    // ── "ISTITUTO COMPRENSIVO di GOTTOLENGO" (destra, 2 righe) ──
+    ctx.font = '21px "Special Elite", monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText("ISTITUTO COMPRENSIVO", W - 70, 74);
+    ctx.fillText("di GOTTOLENGO", W - 70, 74 + 32);
+
+    // ── Logo LogiKron (centrato) ──
+    const logoLk = await loadImgEl('logo-logikron');
+    if (logoLk) {
+      const dim = _imgDim['logo-logikron'] || { w: 600, h: 163 };
+      const lw = 400, lh = Math.round(lw * dim.h / dim.w);
+      ctx.drawImage(logoLk, Math.round((W - lw) / 2), 116, lw, lh);
+    }
+
+    // ── "Giochi Matematici a Squadre" ──
+    ctx.fillStyle = '#141414';
+    ctx.font = 'bold 33px "Playfair Display", serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Giochi Matematici a Squadre', W / 2, 228);
+
+    // ── Data ──
+    ctx.font = 'italic 24px "EB Garamond", serif';
+    ctx.fillStyle = '#222';
+    ctx.fillText(campi.dataCerimonia, W / 2, 267);
+
+    // ── Classe / plesso ──
+    const classeStr = 'Classe ' + sq.classe
+      + (sq.sezione ? ' sez. ' + sq.sezione : '')
+      + ' \u2014 ' + (sq.plesso || sq.istituto);
+    ctx.font = '22px "EB Garamond", serif';
+    ctx.fillStyle = '#2a2a2a';
+    ctx.fillText(classeStr, W / 2, 296);
+
+    // ── "Attestato di" ──
+    ctx.font = '400 38px "Playfair Display", serif';
+    ctx.fillStyle = '#141414';
+    ctx.fillText('Attestato di', W / 2, 336);
+
+    // ── Merito / Partecipazione ──
+    ctx.font = 'bold italic 62px "Playfair Display", serif';
+    ctx.fillStyle = isMerito ? '#6b2400' : '#0f2d7a';
+    ctx.fillText(sq.tipo, W / 2, 377);
+
+    // ── Badge (destra) ──
+    const badgeSrc = creaImgBadge(campi.edizioni);
+    const badgeImg = await loadImgEl('__badge__' + campi.edizioni);
+    if (!_imgElCache['__badge__' + campi.edizioni]) {
+      // crea e cachea il badge come HTMLImageElement
+      await new Promise(function(resolve) {
+        const img = new Image();
+        img.onload = function() { _imgElCache['__badge__' + campi.edizioni] = img; ctx.drawImage(img, W - 140 - 118, 324, 118, 118); resolve(); };
+        img.onerror = resolve;
+        img.src = badgeSrc;
+      });
+    } else {
+      ctx.drawImage(_imgElCache['__badge__' + campi.edizioni], W - 140 - 118, 324, 118, 118);
+    }
+
+    // ── "Conferito a" ──
+    ctx.font = '25px "EB Garamond", serif';
+    ctx.fillStyle = '#1e1e1e';
+    ctx.textAlign = 'center';
+    ctx.fillText('Conferito a', W / 2, 450);
+
+    // ── Nome alunno (Great Vibes, dimensione adattiva) ──
+    const nlen = nomeAlunno.length;
+    const nfs  = nlen > 30 ? 36 : nlen > 24 ? 42 : nlen > 18 ? 48 : nlen > 13 ? 54 : 62;
+    ctx.font = nfs + 'px "Great Vibes", cursive';
+    ctx.fillStyle = '#080808';
+    ctx.fillText(nomeAlunno, W / 2, 492);
+
+    // ── Sottolineatura oro (gradiente) ──
+    const grad = ctx.createLinearGradient(270, 568, W - 270, 568);
+    grad.addColorStop(0, 'rgba(0,0,0,0)');
+    grad.addColorStop(0.3, '#b08820');
+    grad.addColorStop(0.7, '#b08820');
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(270, 569); ctx.lineTo(W - 270, 569);
+    ctx.stroke();
+
+    // ── Timbro (centrato) ──
+    const timbro = await loadImgEl('timbro');
+    if (timbro) ctx.drawImage(timbro, Math.round((W - 130) / 2), 572, 130, 130);
+
+    // ── Referente (colonna sinistra: left:70, width:240, center=190) ──
+    const refCX = 70 + 120;
+    ctx.fillStyle = '#141414';
+    ctx.textAlign = 'center';
+    ctx.font = '20px "EB Garamond", serif';
+    ctx.fillText('Il Referente del Progetto', refCX, 584);
+    ctx.font = 'bold 22px "EB Garamond", serif';
+    ctx.fillText(campi.nomeRef, refCX, 584 + 30);
+
+    // ── Dirigente (colonna destra: right:70, width:270, center=917) ──
+    const dirCX = W - 70 - 270 / 2; // 917
+    ctx.font = '20px "EB Garamond", serif';
+    ctx.fillStyle = '#141414';
+    ctx.fillText('La Dirigente Scolastica', dirCX, 584);
+    ctx.font = 'bold 22px "EB Garamond", serif';
+    ctx.fillText(campi.nomeDS, dirCX, 584 + 30);
+    // Nota legale (3 righe piccole)
+    ctx.font = '14px "EB Garamond", serif';
+    ctx.fillStyle = '#555';
+    const noteY = 584 + 30 + 33 + 4;
+    ctx.fillText('Firma autografa sostituita a mezzo stampa', dirCX, noteY);
+    ctx.fillText('ai sensi e per gli effetti dell\u2019art.\u00a03, C.\u00a02,', dirCX, noteY + 20);
+    ctx.fillText('D.Lgs\u00a0n.\u00a039/1993', dirCX, noteY + 40);
+
+    // ── Genera PDF ──
+    const imgData = canvas.toDataURL('image/jpeg', 0.97);
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    doc.addImage(imgData, 'JPEG', 0, 0, 297, 210);
+    return doc;
+  }
+
+  // ── Costruisce il div HTML dell'attestato (1122×794 px = A4 landscape) ──
+
+  function buildAttestato(sq, nomeAlunno, campi) {
+    const W = 1122, H = 794;
+    const isMerito = sq.tipo === 'Merito';
+    const esc = function(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+
+    const classeStr = 'Classe ' + sq.classe
+      + (sq.sezione ? ' sez. ' + sq.sezione : '')
+      + ' \u2014 ' + (sq.plesso || sq.istituto);
+
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'width:' + W + 'px;height:' + H + 'px;position:relative;overflow:hidden;background:#fff;';
+
+    if (_imgCache['sfondo']) {
+      const bg = document.createElement('img');
+      bg.src = _imgCache['sfondo'];
+      bg.style.cssText = 'position:absolute;top:0;left:0;width:' + W + 'px;height:' + H + 'px;object-fit:cover;z-index:0;';
+      wrap.appendChild(bg);
+    }
+
+    const lay = document.createElement('div');
+    lay.style.cssText = 'position:absolute;top:0;left:0;width:' + W + 'px;height:' + H + 'px;z-index:1;';
+
+    function mk(tag, css, html) {
+      const e = document.createElement(tag);
+      e.style.cssText = css;
+      if (html !== undefined) e.innerHTML = html;
+      return e;
+    }
+
+    // ── Header sinistra ──
+    if (_imgCache['logo-stato']) {
+      const imgEl = mk('img', 'position:absolute;top:72px;left:70px;width:65px;height:65px;object-fit:contain;');
+      imgEl.src = _imgCache['logo-stato'];
+      lay.appendChild(imgEl);
+    }
+    lay.appendChild(mk('div',
+      'position:absolute;top:74px;left:145px;'
+      + 'font-family:\'Special Elite\',monospace;font-size:17px;color:#1a1a1a;line-height:1.5;',
+      "Ministero<br>dell'Istruzione<br>e del Merito"
+    ));
+
+    // ── Header destra ──
+    lay.appendChild(mk('div',
+      'position:absolute;top:74px;right:70px;'
+      + 'font-family:\'Special Elite\',monospace;font-size:21px;color:#1a1a1a;'
+      + 'text-align:right;line-height:1.5;',
+      'ISTITUTO COMPRENSIVO<br>di GOTTOLENGO'
+    ));
+
+    // ── Logo LogiKron ──
+    if (_imgCache['logo-logikron']) {
+      const dim = _imgDim['logo-logikron'] || { w: 600, h: 163 };
+      const lw = 400, lh = Math.round(lw * dim.h / dim.w);
+      const imgEl = mk('img',
+        'position:absolute;top:116px;left:' + Math.round((W - lw) / 2) + 'px;'
+        + 'width:' + lw + 'px;height:' + lh + 'px;object-fit:contain;'
+      );
+      imgEl.src = _imgCache['logo-logikron'];
+      lay.appendChild(imgEl);
+    }
+
+    // ── Giochi Matematici a Squadre ──
+    lay.appendChild(mk('div',
+      'position:absolute;top:228px;left:0;right:0;text-align:center;'
+      + 'font-family:\'Playfair Display\',serif;font-size:33px;font-weight:700;'
+      + 'color:#141414;letter-spacing:0.3px;',
+      'Giochi Matematici a Squadre'
+    ));
+
+    // ── Data ──
+    lay.appendChild(mk('div',
+      'position:absolute;top:267px;left:0;right:0;text-align:center;'
+      + 'font-family:\'EB Garamond\',serif;font-size:24px;font-style:italic;color:#222;',
+      esc(campi.dataCerimonia)
+    ));
+
+    // ── Classe / plesso ──
+    lay.appendChild(mk('div',
+      'position:absolute;top:296px;left:0;right:0;text-align:center;'
+      + 'font-family:\'EB Garamond\',serif;font-size:22px;color:#2a2a2a;',
+      esc(classeStr)
+    ));
+
+    // ── Attestato di ──
+    lay.appendChild(mk('div',
+      'position:absolute;top:336px;left:0;right:0;text-align:center;'
+      + 'font-family:\'Playfair Display\',serif;font-size:38px;font-weight:400;color:#141414;',
+      'Attestato di'
+    ));
+
+    // ── Merito / Partecipazione ──
+    const tipoColor = isMerito ? '#6b2400' : '#0f2d7a';
+    lay.appendChild(mk('div',
+      'position:absolute;top:377px;left:0;right:0;text-align:center;'
+      + 'font-family:\'Playfair Display\',serif;font-size:62px;font-weight:700;'
+      + 'font-style:italic;color:' + tipoColor + ';line-height:1;',
+      esc(sq.tipo)
+    ));
+
+    // ── Badge (destra) ──
+    const badgeImg = creaImgBadge(campi.edizioni);
+    const badgeEl = mk('img', 'position:absolute;top:324px;right:140px;width:118px;height:118px;object-fit:contain;');
+    badgeEl.src = badgeImg;
+    lay.appendChild(badgeEl);
+
+    // ── Conferito a ──
+    lay.appendChild(mk('div',
+      'position:absolute;top:450px;left:0;right:0;text-align:center;'
+      + 'font-family:\'EB Garamond\',serif;font-size:25px;color:#1e1e1e;',
+      'Conferito a'
+    ));
+
+    // ── Nome alunno — Great Vibes, scala aggressiva per nomi lunghi ──
+    // Great Vibes è ~0.75em per carattere → nomi sicuri (non overflow su 982px)
+    const nlen = nomeAlunno.length;
+    const nfs  = nlen > 30 ? 36 : nlen > 24 ? 42 : nlen > 18 ? 48 : nlen > 13 ? 54 : 62;
+    lay.appendChild(mk('div',
+      'position:absolute;top:492px;left:70px;right:70px;text-align:center;'
+      + 'font-family:\'Great Vibes\',cursive;font-size:' + nfs + 'px;'
+      + 'color:#080808;line-height:1.15;white-space:normal;overflow:hidden;',
+      esc(nomeAlunno)
+    ));
+
+    // ── Sottolineatura oro ──
+    lay.appendChild(mk('div',
+      'position:absolute;top:568px;left:270px;right:270px;height:2px;'
+      + 'background:linear-gradient(90deg,transparent 0%,#b08820 30%,#b08820 70%,transparent 100%);'
+    ));
+
+    // ── Timbro centrato ──
+    if (_imgCache['timbro']) {
+      const timbEl = mk('img',
+        'position:absolute;top:572px;left:' + Math.round((W - 130) / 2) + 'px;'
+        + 'width:130px;height:130px;object-fit:contain;'
+      );
+      timbEl.src = _imgCache['timbro'];
+      lay.appendChild(timbEl);
+    }
+
+    // ── Referente (sinistra) ──
+    lay.appendChild(mk('div',
+      'position:absolute;top:584px;left:70px;width:240px;text-align:center;'
+      + 'font-family:\'EB Garamond\',serif;font-size:20px;color:#141414;line-height:1.5;',
+      'Il Referente del Progetto<br>'
+      + '<strong style="font-size:22px;">' + esc(campi.nomeRef) + '</strong>'
+    ));
+
+    // ── Dirigente + nota legale (destra) ──
+    lay.appendChild(mk('div',
+      'position:absolute;top:584px;right:70px;width:270px;text-align:center;'
+      + 'font-family:\'EB Garamond\',serif;font-size:20px;color:#141414;line-height:1.5;',
+      'La Dirigente Scolastica<br>'
+      + '<strong style="font-size:22px;">' + esc(campi.nomeDS) + '</strong><br>'
+      + '<span style="font-size:14px;color:#555;line-height:1.4;display:block;margin-top:4px;">'
+      + 'Firma autografa sostituita a mezzo stampa<br>'
+      + 'ai sensi e per gli effetti dell\u2019art.\u00a03, C.\u00a02,<br>D.Lgs\u00a0n.\u00a039/1993'
+      + '</span>'
+    ));
+
+    wrap.appendChild(lay);
+    return wrap;
+  }
+
+  // ===================== INFO MODAL =====================
+
+  function mostraInfo() {
+    document.getElementById('modalInfo').style.display = 'block';
+  }
+
+  // ===================== UPLOAD PDF — Drive API OAuth (diretto, nessun JSONP per i dati) =====================
+
+  const GOOGLE_CLIENT_ID = '212298845224-oqtoa9no5j82rfhm1sjiffjbf14afs7c.apps.googleusercontent.com';
+  let _driveToken = null;
+  let _driveTokenExpiry = 0;
+  let _driveTokenClient = null;
+  let _attestatiFolderId = null;
+  let _folderIdCache = {}; // cache subfolder IDs: "ordine|istituto|plesso|classe" → folderId
+
+  function initDriveAuth() {
+    // Inizializzato quando GIS è pronto (callback onload dello script GIS)
+    if (typeof google === 'undefined' || !google.accounts) return;
+    _driveTokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: 'https://www.googleapis.com/auth/drive.file',
+      callback: '' // impostato dinamicamente in getDriveToken()
+    });
+  }
+
+  function getDriveToken() {
+    return new Promise(function(resolve, reject) {
+      if (_driveToken && Date.now() < _driveTokenExpiry - 60000) {
+        resolve(_driveToken);
+        return;
+      }
+      if (!_driveTokenClient) {
+        initDriveAuth();
+        if (!_driveTokenClient) { reject(new Error('Google Identity Services non ancora caricato. Riprova tra un secondo.')); return; }
+      }
+      _driveTokenClient.callback = function(response) {
+        if (response.error) { reject(new Error('Autorizzazione Google negata: ' + response.error)); return; }
+        _driveToken = response.access_token;
+        _driveTokenExpiry = Date.now() + (response.expires_in || 3600) * 1000;
+        resolve(_driveToken);
+      };
+      // prompt vuoto = silenzioso se già autorizzato, schermata consenso solo la prima volta
+      _driveTokenClient.requestAccessToken({ prompt: '' });
+    });
+  }
+
+  async function _getAttestatiFolderIdCached() {
+    if (_attestatiFolderId) return _attestatiFolderId;
+    const r = await lkApi(API_AS, { action: 'getAttestatiFolderInfo', pwd: adminPwd });
+    if (r.error) throw new Error(r.error);
+    _attestatiFolderId = r.folderId;
+    return _attestatiFolderId;
+  }
+
+  // Cerca o crea una cartella in Drive via API (nessun GAS coinvolto)
+  async function _driveGetOrCreateFolder(name, parentId, token) {
+    const q = "name='" + name.replace(/'/g, "\\'") + "' and mimeType='application/vnd.google-apps.folder' and '" + parentId + "' in parents and trashed=false";
+    const sr = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(q) + '&fields=files(id)', { headers: { Authorization: 'Bearer ' + token } });
+    const sd = await sr.json();
+    if (sd.files && sd.files.length > 0) return sd.files[0].id;
+    const cr = await fetch('https://www.googleapis.com/drive/v3/files', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] })
+    });
+    const cf = await cr.json();
+    if (!cf.id) throw new Error('Impossibile creare cartella "' + name + '"');
+    return cf.id;
+  }
+
+  // Restituisce il folderId del subfolder corretto per un attestato (con cache per classe)
+  async function _getTargetFolderIdForAttest(meta, rootFolderId, token) {
+    const ordineLabel = (meta.ordine === 'primaria' ? 'Primaria' : 'Secondaria') + ' ' + meta.classe + '\u00aa';
+    const istitutoLabel = meta.istituto || 'Istituto';
+    const plessoLabel = meta.plesso || meta.istituto || 'Plesso';
+    const classeLabel = (meta.classe + '\u00aa ' + (meta.sezione || '')).trim();
+    const cacheKey = [ordineLabel, istitutoLabel, plessoLabel, classeLabel].join('|');
+    if (_folderIdCache[cacheKey]) return _folderIdCache[cacheKey];
+    let fId = rootFolderId;
+    for (const folderName of [ordineLabel, istitutoLabel, plessoLabel, classeLabel]) {
+      fId = await _driveGetOrCreateFolder(folderName, fId, token);
+    }
+    _folderIdCache[cacheKey] = fId;
+    return fId;
+  }
+
+  async function _uploadToDriveApi(pdfBlob, fileName, folderId, token) {
+    // Cerca se esiste già un file con lo stesso nome nella cartella → sovrascrive invece di duplicare
+    const q = encodeURIComponent("name='" + fileName.replace(/'/g, "\\'") + "' and '" + folderId + "' in parents and trashed=false");
+    const searchResp = await fetch(
+      'https://www.googleapis.com/drive/v3/files?q=' + q + '&fields=files(id,name)',
+      { headers: { Authorization: 'Bearer ' + token } }
+    );
+    const searchData = await searchResp.json();
+    const existing = searchData.files && searchData.files[0];
+
+    const body = new FormData();
+    let resp;
+    if (existing) {
+      // PATCH: aggiorna contenuto del file esistente (nessun doppione)
+      body.append('metadata', new Blob(['{}'], { type: 'application/json' }));
+      body.append('file', pdfBlob);
+      resp = await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files/' + existing.id + '?uploadType=multipart',
+        { method: 'PATCH', headers: { Authorization: 'Bearer ' + token }, body: body }
+      );
+    } else {
+      // POST: crea nuovo file
+      const metadata = { name: fileName, parents: [folderId], mimeType: 'application/pdf' };
+      body.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+      body.append('file', pdfBlob);
+      resp = await fetch(
+        'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+        { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: body }
+      );
+    }
+    if (!resp.ok) {
+      const err = await resp.json().catch(function(){ return {}; });
+      throw new Error('Drive API errore ' + resp.status + ': ' + ((err.error && err.error.message) || resp.statusText));
+    }
+    return resp.json(); // { id, name }
+  }
+
+  // Punto di ingresso unico — firma identica a prima, nessuna modifica nel resto del codice
+  // Fix 5 (06/06/2026): upload diretto nel subfolder corretto via Drive API — nessun GAS intermediario
+  // Ritorna Promise<{ ok, fileId, fileName, fileIdCancellati }>
+  async function uploadPdfToBackend(pdfBase64, meta) {
+    // 1. Token OAuth
+    const token = await getDriveToken();
+
+    // 2. Root folder ID (da Config via JSONP — una sola chiamata, poi cached)
+    const rootFolderId = await _getAttestatiFolderIdCached();
+
+    // 3. Subfolder corretto (browser→Drive API, con cache per classe — 4 query la prima volta, poi 0)
+    const targetFolderId = await _getTargetFolderIdForAttest(meta, rootFolderId, token);
+
+    // 4. Converti base64 → Blob
+    const binary = atob(pdfBase64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const pdfBlob = new Blob([bytes], { type: 'application/pdf' });
+    const fileName = (meta.nomeAlunno || 'attestato').replace(/[\/\\?%*:|"<>]/g, '_') + '.pdf';
+
+    // 5. Upload diretto nel subfolder corretto (nessuna chiamata GAS per spostamento)
+    const uploaded = await _uploadToDriveApi(pdfBlob, fileName, targetFolderId, token);
+
+    // 6. Se è una correzione di nome: elimina il vecchio file (se esiste) via Drive API
+    const fileIdCancellati = [];
+    if (meta.vecchioNome) {
+      const vecchioFileName = meta.vecchioNome.replace(/[\/\\?%*:|"<>]/g, '_') + '.pdf';
+      const qv = "name='" + vecchioFileName.replace(/'/g, "\\'") + "' and '" + targetFolderId + "' in parents and trashed=false";
+      const svr = await fetch('https://www.googleapis.com/drive/v3/files?q=' + encodeURIComponent(qv) + '&fields=files(id)', { headers: { Authorization: 'Bearer ' + token } });
+      const svData = await svr.json();
+      if (svData.files) {
+        for (const f of svData.files) {
+          if (f.id !== uploaded.id) {
+            await fetch('https://www.googleapis.com/drive/v3/files/' + f.id, { method: 'DELETE', headers: { Authorization: 'Bearer ' + token } });
+            fileIdCancellati.push(f.id);
+          }
+        }
+      }
+    }
+
+    return { ok: true, fileId: uploaded.id, fileName: uploaded.name, fileIdCancellati: fileIdCancellati };
+  }
+
+  // ===================== CONFIRM MODAL EMAIL =====================
+
+  function confermaInvioEmail() {
+    if (_datiAttest.length === 0) { toast('⚠️ Prima carica i dati di una gara.'); return; }
+    if (getListaSelezionati().length === 0) { toast('⚠️ Seleziona almeno un alunno.'); return; }
+    document.getElementById('modalConfirmEmail').style.display = 'block';
+  }
+
+  // ===================== GENERA + DRIVE (senza email, per scheduler) =====================
+
+  async function generaTuttiDriveOnly() {
+    const lista = getListaSelezionati();
+    if (lista.length === 0) { toast('Nessun alunno selezionato.'); return; }
+
+    const btn = document.getElementById('btnDriveOnly');
+    btn.disabled = true;
+    document.getElementById('btnTutti').disabled = true;
+    document.getElementById('btnDriveEmail').disabled = true;
+    document.getElementById('progressWrap').style.display = 'block';
+    document.getElementById('progressBar').style.width = '0%';
+    showBigProgress('Caricamento attestati su Drive...');
+
+    const byDocente = {};
+    let salvati = 0, errori = 0;
+
+    for (let i = 0; i < lista.length; i++) {
+      const sq = lista[i].sq, nome = lista[i].nome;
+      const pct = Math.round(((i + 1) / lista.length) * 95);
+      const label = '☁️ Drive ' + (i + 1) + '/' + lista.length + ' — ' + nome + '...';
+      document.getElementById('progressBar').style.width = pct + '%';
+      document.getElementById('progressLabel').textContent = label;
+      updateBigProgress(label, pct);
+
+      try {
+        const doc = await generaPDF(sq, nome);
+        const pdfBase64 = doc.output('datauristring').split(',')[1];
+        const r = await uploadPdfToBackend(pdfBase64, {
+          nomeAlunno: nome,
+          ordine:   sq.ordine,
+          classe:   sq.classe,
+          sezione:  sq.sezione,
+          istituto: sq.istituto,
+          plesso:   sq.plesso
+        });
+        salvati++;
+        const key = sq.email || '_';
+        if (!byDocente[key]) byDocente[key] = { nomeDocente: sq.docente, fileIds: [] };
+        byDocente[key].fileIds.push(r.fileId);
+      } catch(e) {
+        console.error('Errore Drive per', nome, e);
+        errori++;
+        toast('⚠️ Errore per ' + nome + ': ' + e.message);
+      }
+      await new Promise(function(r){ setTimeout(r, 200); });
+    }
+
+    // Registra mapping per lo scheduler
+    if (_garaId) {
+      lkApi(API_AS, {
+        action:   'registraAttestatiPerInvio',
+        pwd:      adminPwd,
+        garaId:   _garaId,
+        garaNome: _garaNome,
+        mapping:  JSON.stringify(byDocente)
+      }, 20000).catch(function(e){ console.warn('registraAttestatiPerInvio:', e); });
+    }
+
+    const labelFine = '✅ ' + salvati + '/' + lista.length + ' su Drive' + (errori ? ' (' + errori + ' errori)' : '') + ' · Usa lo scheduler ⏰ per pianificare l\'invio email';
+    document.getElementById('progressBar').style.width = '100%';
+    document.getElementById('progressLabel').textContent = labelFine;
+    updateBigProgress(labelFine, 100);
+
+    btn.disabled = false;
+    document.getElementById('btnTutti').disabled = false;
+    document.getElementById('btnDriveEmail').disabled = false;
+    setTimeout(function(){ document.getElementById('progressWrap').style.display = 'none'; hideBigProgress(); }, 8000);
+    toast('✅ ' + salvati + ' PDF su Drive · Ora pianifica l\'invio email con ⏰');
+  }
+
+  // ===================== GENERA + DRIVE + EMAIL (FLUSSO COMPLETO) =====================
+
+  async function generaTuttiDriveEmail() {
+    const lista = getListaSelezionati();
+    if (lista.length === 0) { toast('Nessun alunno selezionato.'); return; }
+
+    const btn = document.getElementById('btnDriveEmail');
+    btn.disabled = true;
+    document.getElementById('btnTutti').disabled = true;
+    document.getElementById('btnDriveOnly').disabled = true;
+    document.getElementById('progressWrap').style.display = 'block';
+    document.getElementById('progressBar').style.width = '0%';
+    showBigProgress('Generazione PDF + caricamento Drive + invio email...');
+
+    // byDocente: email → { nomeDocente, fileIds:[] }
+    const byDocente = {};
+    let salvati = 0, errori = 0;
+
+    // FASE 1: genera PDF + upload Drive
+    for (let i = 0; i < lista.length; i++) {
+      const sq = lista[i].sq, nome = lista[i].nome;
+      const pct1 = Math.round((i / lista.length) * 80);
+      const label1 = '☁️ Drive ' + (i + 1) + '/' + lista.length + ' — ' + nome + '...';
+      document.getElementById('progressBar').style.width = pct1 + '%';
+      document.getElementById('progressLabel').textContent = label1;
+      updateBigProgress(label1, pct1);
+
+      try {
+        const doc = await generaPDF(sq, nome);
+        const pdfBase64 = doc.output('datauristring').split(',')[1];
+        const r = await uploadPdfToBackend(pdfBase64, {
+          nomeAlunno: nome,
+          ordine:   sq.ordine,
+          classe:   sq.classe,
+          sezione:  sq.sezione,
+          istituto: sq.istituto,
+          plesso:   sq.plesso
+        });
+        salvati++;
+        const key = sq.email || '_';
+        if (!byDocente[key]) byDocente[key] = { nomeDocente: sq.docente, fileIds: [] };
+        byDocente[key].fileIds.push(r.fileId);
+      } catch(e) {
+        console.error('Errore Drive per', nome, e);
+        errori++;
+        toast('\u26A0\uFE0F Errore per ' + nome + ': ' + e.message);
+      }
+      await new Promise(function(r){ setTimeout(r, 200); });
+    }
+
+    // Fire-and-forget: registra mapping su AttestatiDrive per uso futuro dallo scheduler
+    if (_garaId) {
+      lkApi(API_AS, {
+        action:   'registraAttestatiPerInvio',
+        pwd:      adminPwd,
+        garaId:   _garaId,
+        garaNome: _garaNome,
+        mapping:  JSON.stringify(byDocente)
+      }, 20000).catch(function(e){ console.warn('registraAttestatiPerInvio:', e); });
+    }
+
+    // FASE 2: invia email per docente
+    const docenti = Object.entries(byDocente).filter(function(d){ return d[0] !== '_'; });
+    let emailOk = 0;
+
+    for (let d = 0; d < docenti.length; d++) {
+      const email = docenti[d][0], info = docenti[d][1];
+      const pct2 = 80 + Math.round(((d + 1) / Math.max(docenti.length, 1)) * 20);
+      const label2 = '📧 Email ' + (d + 1) + '/' + docenti.length + ' → ' + email + '...';
+      document.getElementById('progressBar').style.width = pct2 + '%';
+      document.getElementById('progressLabel').textContent = label2;
+      updateBigProgress(label2, pct2);
+
+      try {
+        const r = await lkApi(API_AS, {
+          action:       'inviaEmailDocente',
+          pwd:          adminPwd,
+          emailDocente: email,
+          nomeDocente:  info.nomeDocente,
+          garaNome:     _garaNome,
+          fileIds:      JSON.stringify(info.fileIds)
+        }, 30000);
+        if (r.ok) emailOk++;
+      } catch(e) {
+        console.error('Errore email per', email, e);
+      }
+      await new Promise(function(r){ setTimeout(r, 400); });
+    }
+
+    const labelFine2 = '✅ ' + salvati + '/' + lista.length + ' su Drive' + (errori ? ' (' + errori + ' errori)' : '') + ' · ' + emailOk + '/' + docenti.length + ' email inviate';
+    document.getElementById('progressBar').style.width = '100%';
+    document.getElementById('progressLabel').textContent = labelFine2;
+    updateBigProgress(labelFine2, 100);
+
+    btn.disabled = false;
+    document.getElementById('btnTutti').disabled = false;
+    document.getElementById('btnDriveOnly').disabled = false;
+    setTimeout(function(){ document.getElementById('progressWrap').style.display = 'none'; hideBigProgress(); }, 6000);
+    toast('✅ ' + salvati + ' PDF su Drive · ' + emailOk + ' email inviate');
+  }
+
+  // ===================== SALVA SINGOLO SU DRIVE (con confirm) =====================
+
+  function salvaAlunnoDrive(sqIdx, aIdx, btn) {
+    const sq   = _datiAttest[sqIdx];
+    const nome = sq.alunni[aIdx];
+
+    document.getElementById('confirmDriveNome').textContent = nome + ' (' + sq.squadra + ')';
+
+    const modal = document.getElementById('modalConfirmDrive');
+    modal.style.display = 'block';
+
+    const okBtn = document.getElementById('btnConfirmDriveOk');
+    // Rimuove listener precedenti
+    const newOk = okBtn.cloneNode(true);
+    okBtn.parentNode.replaceChild(newOk, okBtn);
+
+    newOk.addEventListener('click', async function() {
+      const vecchioNome = document.getElementById('confirmDriveVecchioNome').value.trim();
+      document.getElementById('confirmDriveVecchioNome').value = '';
+      modal.style.display = 'none';
+      const orig = btn.textContent;
+      btn.disabled = true; btn.textContent = '\u23F3';
+
+      try {
+        const doc = await generaPDF(sq, nome);
+        const pdfBase64 = doc.output('datauristring').split(',')[1];
+        const r = await uploadPdfToBackend(pdfBase64, {
+          nomeAlunno: nome,
+          vecchioNome: vecchioNome || null,
+          ordine:   sq.ordine,
+          classe:   sq.classe,
+          sezione:  sq.sezione,
+          istituto: sq.istituto,
+          plesso:   sq.plesso
+        });
+        if (r.error) throw new Error(r.error);
+        // Aggiorna il mapping AttestatiDrive se c'erano file vecchi (es. correzione nome)
+        if (_garaId && sq.email && r.fileIdCancellati && r.fileIdCancellati.length > 0) {
+          r.fileIdCancellati.forEach(function(vecchioFid) {
+            lkApi(API_AS, {
+              action: 'aggiornaFileIdMapping',
+              pwd: adminPwd,
+              garaId: _garaId,
+              emailDocente: sq.email,
+              vecchioFileId: vecchioFid,
+              nuovoFileId: r.fileId
+            }, 15000).catch(function(e){ console.warn('aggiornaFileIdMapping:', e); });
+          });
+        }
+        btn.textContent = '\u2705'; btn.disabled = false;
+        toast('\u2705 ' + nome + ' salvato su Drive (mail NON reinviata)');
+        setTimeout(function(){ btn.textContent = orig; }, 3000);
+      } catch(e) {
+        btn.disabled = false; btn.textContent = orig;
+        toast('\u274C Errore: ' + e.message);
+      }
+    });
+  }
+
+  // ===================== EDIT NOME ALUNNO =====================
+
+  let _editSqIdx = -1, _editAIdx = -1;
+
+  function apriEditNome(sqIdx, aIdx) {
+    _editSqIdx = sqIdx;
+    _editAIdx = aIdx;
+    const sq = _datiAttest[sqIdx];
+    document.getElementById('editNomeInput').value = sq.alunni[aIdx];
+    document.getElementById('editNomeSquadra').textContent = 'Squadra: ' + sq.squadra;
+    document.getElementById('btnSalvaEditNome').disabled = false;
+    document.getElementById('btnSalvaEditNome').textContent = '✅ Salva tutto';
+    document.getElementById('modalEditNome').style.display = 'block';
+    setTimeout(function(){ document.getElementById('editNomeInput').focus(); document.getElementById('editNomeInput').select(); }, 50);
+  }
+
+  async function salvaEditNome() {
+    const sqIdx = _editSqIdx, aIdx = _editAIdx;
+    if (sqIdx < 0) return;
+    const sq = _datiAttest[sqIdx];
+    const vecchioNome = sq.alunni[aIdx];
+    const nuovoNome = document.getElementById('editNomeInput').value.trim();
+    if (!nuovoNome) { toast('⚠️ Inserisci un nome.'); return; }
+    if (nuovoNome === vecchioNome) { document.getElementById('modalEditNome').style.display = 'none'; return; }
+
+    const btn = document.getElementById('btnSalvaEditNome');
+    btn.disabled = true; btn.textContent = '⏳ Aggiorno sheet...';
+
+    try {
+      // 1. Aggiorna nome nello Sheet Iscrizioni
+      const r = await lkApi(API_AS, {
+        action: 'aggiornaNomeAlunno',
+        pwd: adminPwd,
+        nomeSquadra: sq.squadra,
+        vecchioNome: vecchioNome,
+        nuovoNome: nuovoNome
+      });
+      if (r.error) throw new Error(r.error);
+
+      // 2. Aggiorna memoria locale
+      _datiAttest[sqIdx].alunni[aIdx] = nuovoNome;
+      document.getElementById('modalEditNome').style.display = 'none';
+
+      // 3. Rigenera PDF + Drive (vecchioNome usato per cancellare il vecchio file)
+      btn.textContent = '⏳ PDF + Drive...';
+      const doc = await generaPDF(sq, nuovoNome);
+      const pdfBase64 = doc.output('datauristring').split(',')[1];
+      const uploaded = await uploadPdfToBackend(pdfBase64, {
+        nomeAlunno: nuovoNome,
+        vecchioNome: vecchioNome,
+        ordine: sq.ordine,
+        classe: sq.classe,
+        sezione: sq.sezione,
+        istituto: sq.istituto,
+        plesso: sq.plesso
+      });
+
+      // 4. Aggiorna mapping AttestatiDrive se ci sono file vecchi da aggiornare
+      if (_garaId && sq.email && uploaded.fileIdCancellati && uploaded.fileIdCancellati.length > 0) {
+        uploaded.fileIdCancellati.forEach(function(vecchioFid) {
+          lkApi(API_AS, {
+            action: 'aggiornaFileIdMapping',
+            pwd: adminPwd,
+            garaId: _garaId,
+            emailDocente: sq.email,
+            vecchioFileId: vecchioFid,
+            nuovoFileId: uploaded.fileId
+          }, 15000).catch(function(e){ console.warn('aggiornaFileIdMapping:', e); });
+        });
+      }
+
+      // 5. Aggiorna la UI
+      renderSquadre();
+      const block = document.getElementById('sq-block-' + sqIdx);
+      if (block && !block.classList.contains('open')) block.classList.add('open');
+
+      toast('✅ ' + nuovoNome + ' — Sheet aggiornato e Drive sostituito!');
+    } catch(e) {
+      toast('❌ Errore: ' + e.message);
+      btn.disabled = false; btn.textContent = '✅ Salva tutto';
+    }
+  }
+
+  // ===================== UTILS =====================
+
+  function _esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ===================== MODAL PROGRESSO A TUTTO SCHERMO =====================
+  let _bigTimer = null;
+
+  function showBigProgress(titolo) {
+    hideBigProgress();
+    const el = document.createElement('div');
+    el.id = '_bigProgress';
+    el.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.93);z-index:99999;display:flex;align-items:center;justify-content:center;';
+    el.innerHTML = `
+      <div style="background:#1e293b;border:1px solid #334155;border-radius:20px;padding:2.5rem 3rem;max-width:460px;width:92%;text-align:center;color:#e2e8f0;">
+        <div style="font-size:2.2rem;margin-bottom:0.75rem;">⚙️</div>
+        <div style="font-size:1.1rem;font-weight:700;margin-bottom:0.3rem;">${titolo}</div>
+        <div id="_bigTimer" style="font-size:0.82rem;color:#94a3b8;margin-bottom:1.5rem;">in corso da 0 sec...</div>
+        <div id="_bigLabel" style="font-size:0.9rem;color:#60a5fa;min-height:1.4em;margin-bottom:0.75rem;">Avvio...</div>
+        <div style="background:#0f172a;border-radius:999px;height:12px;overflow:hidden;margin-bottom:0.6rem;">
+          <div id="_bigBar" style="height:100%;width:0%;background:linear-gradient(90deg,#4f46e5,#7c3aed,#06b6d4);border-radius:999px;transition:width 0.3s ease;"></div>
+        </div>
+        <div id="_bigPct" style="font-size:0.78rem;color:#64748b;">0%</div>
+      </div>`;
+    document.body.appendChild(el);
+    let sec = 0;
+    _bigTimer = setInterval(function() {
+      sec++;
+      const t = document.getElementById('_bigTimer');
+      if (t) t.textContent = 'in corso da ' + sec + ' sec...';
+    }, 1000);
+  }
+
+  function updateBigProgress(label, pct) {
+    const l = document.getElementById('_bigLabel');
+    const b = document.getElementById('_bigBar');
+    const p = document.getElementById('_bigPct');
+    if (l) l.textContent = label;
+    if (b) b.style.width = pct + '%';
+    if (p) p.textContent = Math.round(pct) + '%';
+  }
+
+  function hideBigProgress() {
+    if (_bigTimer) { clearInterval(_bigTimer); _bigTimer = null; }
+    const el = document.getElementById('_bigProgress');
+    if (el) el.remove();
+  }
+
+  function toast(msg) {
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function(){ t.remove(); }, 5000);
+  }
+
+  // ===================== SCHEDULER EMAIL =====================
+
+  function aggiornSchedGara() {
+    if (!_garaId) return;
+    const el = document.getElementById('schedGaraNome');
+    el.textContent = _garaNome || _garaId;
+    el.style.color = '#e2e8f0';
+  }
+
+  function pianificaInvio() {
+    if (!_garaId) { toast('⚠️ Prima carica i dati di una gara.'); return; }
+    const raw = document.getElementById('schedDataOra').value;
+    if (!raw) { toast('⚠️ Inserisci data e ora.'); return; }
+    const dt = new Date(raw);
+    if (dt <= new Date()) { toast('⚠️ La data deve essere nel futuro.'); return; }
+    const btn = document.getElementById('btnPianifica');
+    btn.disabled = true; btn.textContent = '⏳...';
+    lkApi(API_AS, {
+      action:   'pianificaInvioEmail',
+      pwd:      adminPwd,
+      garaId:   _garaId,
+      garaNome: _garaNome,
+      dataOra:  dt.toISOString()
+    }, 20000).then(function(r) {
+      btn.disabled = false; btn.textContent = '⏰ Pianifica';
+      if (r.ok) {
+        toast('✅ Trigger pianificato per ' + dt.toLocaleString('it-IT', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}));
+        caricaTrigger();
+      } else {
+        toast('❌ ' + (r.error || 'Errore sconosciuto'));
+      }
+    }).catch(function(e) {
+      btn.disabled = false; btn.textContent = '⏰ Pianifica';
+      toast('❌ ' + e.message);
+    });
+  }
+
+  function caricaTrigger() {
+    const el = document.getElementById('triggerList');
+    el.style.fontStyle = 'normal';
+    el.innerHTML = '<span style="color:#94a3b8;">⏳ Caricamento...</span>';
+    lkApi(API_AS, { action: 'getTriggerAttestati', pwd: adminPwd }, 15000).then(function(r) {
+      if (r.error) { el.innerHTML = '<span style="color:#f87171;">❌ ' + r.error + '</span>'; return; }
+      const list = r.triggers || [];
+      if (list.length === 0) {
+        el.innerHTML = '<span style="color:#64748b;font-style:italic;">Nessun trigger pianificato.</span>';
+        return;
+      }
+      el.innerHTML = list.map(function(t) {
+        const dt = new Date(t.dataOra);
+        const dtStr = dt.toLocaleString('it-IT', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+        return '<div style="display:flex;align-items:center;gap:0.75rem;padding:0.65rem 0.85rem;background:rgba(15,23,42,0.6);border:1px solid #334155;border-radius:8px;margin-bottom:0.5rem;">'
+          + '<span style="font-size:1.1rem;">⏰</span>'
+          + '<div style="flex:1;">'
+          + '<div style="font-weight:600;color:#e2e8f0;">' + _esc(t.garaNome || t.garaId) + '</div>'
+          + '<div style="font-size:0.8rem;color:#64748b;">Invio email: <strong style="color:#fbbf24;">' + dtStr + '</strong></div>'
+          + '</div>'
+          + '<button onclick="cancelTrigger(\'' + t.triggerId + '\')" '
+          + 'style="background:rgba(127,29,29,0.3);border:1px solid rgba(248,113,113,0.3);color:#f87171;padding:0.35rem 0.75rem;border-radius:6px;cursor:pointer;font-size:0.8rem;">🗑 Cancella</button>'
+          + '</div>';
+      }).join('');
+    }).catch(function(e) {
+      el.innerHTML = '<span style="color:#f87171;">❌ ' + e.message + '</span>';
+    });
+  }
+
+  function cancelTrigger(triggerId) {
+    if (!confirm('Cancellare questo trigger pianificato?')) return;
+    lkApi(API_AS, { action: 'cancelTriggerAttestato', pwd: adminPwd, triggerId: triggerId }, 15000)
+      .then(function(r) {
+        if (r.ok) { toast('✅ Trigger cancellato.'); caricaTrigger(); }
+        else toast('❌ ' + (r.error || 'Errore'));
+      }).catch(function(e){ toast('❌ ' + e.message); });
+  }
+
+  // Avvia se già loggato (accetta sia token attestati che token admin)
+  if (sessionStorage.getItem('lkAttestati') === 'true' || sessionStorage.getItem('logikronAdmin') === 'true') { init(); }
+</script>
+</body>
+</html>
