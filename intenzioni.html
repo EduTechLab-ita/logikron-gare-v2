@@ -358,7 +358,7 @@
             ordine: formData.ordine, classe: formData.classe,
             sezione: formData.sezione, numeroSquadre: formData.numeroSquadre,
             note: formData.note
-          }, 30000).catch(() => {});
+          }, 30000).then(r => console.log('[LK-MAIL]', JSON.stringify(r))).catch(err => console.error('[LK-MAIL-ERR]', err.message));
         })
         .catch(err => {
           btn.disabled = false;
