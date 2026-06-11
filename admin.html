@@ -3596,6 +3596,7 @@
         if (!risposta) { errori++; rInput.style.borderColor = '#dc2626'; continue; }
         rInput.style.borderColor = '';
         domande.push({
+          num: i,
           testo: (document.getElementById('qTesto' + i).value || '').trim(),
           risposta: risposta
         });
