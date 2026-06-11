@@ -1571,7 +1571,10 @@
         let html = '<div style="font-size:0.85rem;">';
         let docCorrente = '';
         lista.forEach(i => {
-          const chiave = i.docente + ' — ' + i.istituto + ', ' + i.plesso + ' — ' + i.ordine + ' ' + i.classe + ' sez.' + i.sezione;
+          const nomeDoc = i.nome_docente || i.docente || '';
+          const nomeSquadra = i.nome_squadra || i.nomeSquadra || '';
+          const rowId = i.id || i.row;
+          const chiave = nomeDoc + ' — ' + i.istituto + ', ' + i.plesso + ' — ' + i.ordine + ' ' + i.classe + ' sez.' + i.sezione;
           if (chiave !== docCorrente) {
             if (docCorrente !== '') html += '</div>';
             html += '<div style="margin-bottom:0.75rem; padding:0.75rem; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px;">';
@@ -1579,11 +1582,11 @@
             html += '<div style="font-size:0.78rem; color:var(--lk-text-muted); margin-bottom:0.4rem;">' + i.email + '</div>';
             docCorrente = chiave;
           }
-          const studenti = (i.studenti || '').split(';').map(s => s.trim()).filter(Boolean);
+          const studenti = (i.studenti || '').split(/[;,]/).map(s => s.trim()).filter(Boolean);
           html += '<div style="display:flex; align-items:flex-start; gap:0.5rem; margin-bottom:0.3rem; padding:0.35rem 0.5rem; background:white; border-radius:6px; border:1px solid #e2e8f0;">';
-          html += '<code style="background:#4f46e5; color:white; padding:2px 8px; border-radius:4px; font-size:0.8rem; white-space:nowrap; flex-shrink:0;">' + i.nomeSquadra + '</code>';
+          html += '<code style="background:#4f46e5; color:white; padding:2px 8px; border-radius:4px; font-size:0.8rem; white-space:nowrap; flex-shrink:0;">' + nomeSquadra + '</code>';
           html += '<span style="color:var(--lk-text); flex:1;">' + studenti.join(', ') + '</span>';
-          html += '<button onclick="eliminaIscrizioneAdmin(' + i.row + ', \'' + i.nomeSquadra + '\')" style="background:none; border:1px solid #fca5a5; color:#dc2626; border-radius:4px; padding:1px 7px; font-size:0.75rem; cursor:pointer; flex-shrink:0;">🗑</button>';
+          html += '<button onclick="eliminaIscrizioneAdmin(' + rowId + ', \'' + nomeSquadra + '\')" style="background:none; border:1px solid #fca5a5; color:#dc2626; border-radius:4px; padding:1px 7px; font-size:0.75rem; cursor:pointer; flex-shrink:0;">🗑</button>';
           html += '</div>';
         });
         if (docCorrente !== '') html += '</div>';
@@ -3816,7 +3819,14 @@
         const action = tab === 'intenzioni' ? 'getIntenzioni' : 'getIscrizioni';
         const params = tab === 'intenzioni' ? { action } : { action, pwd: adminPwd };
         lkApi(API, params).then(lista => {
-          _modalData[tab] = Array.isArray(lista) ? lista : [];
+          // Normalizza campi CF (id→row, nome_docente→nome, numero_squadre→nSquadre, nome_squadra→nomeSquadra)
+          _modalData[tab] = Array.isArray(lista) ? lista.map(x => Object.assign({}, x, {
+            row: x.id,
+            nome: x.nome_docente || x.nome || '',
+            docente: x.nome_docente || x.docente || '',
+            nSquadre: x.numero_squadre || x.nSquadre || 1,
+            nomeSquadra: x.nome_squadra || x.nomeSquadra || ''
+          })) : [];
           _renderModal(_modalData[tab], tab);
         }).catch(err => {
           document.getElementById('modalBody').innerHTML = '<div class="modal-empty" style="color:#dc2626;">Errore: ' + err.message + '</div>';
@@ -3878,7 +3888,7 @@
             </div>
           </td></tr>`;
         } else {
-          const studentiRighe = (r.studenti||'').split(';').map(s=>s.trim()).filter(Boolean).join('\n');
+          const studentiRighe = (r.studenti||'').split(/[;,]/).map(s=>s.trim()).filter(Boolean).join('\n');
           return `<tr class="modal-edit-row" id="editrow-${row}"><td colspan="5">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem 0.75rem;">
               <label style="font-size:0.75rem;color:#64748b;grid-column:1/-1;">✏️ Modifica iscrizione riga ${row} — <code style="background:#4f46e5;color:white;padding:1px 6px;border-radius:4px;font-size:0.78rem;">${_esc(r.nomeSquadra)}</code></label>
@@ -3916,7 +3926,7 @@
           <td><button class="btn-modal-edit" onclick="_startEdit(${row},'intenzioni')">✏️</button><button class="btn-modal-del" onclick="_deleteRecord(${row},'intenzioni','${_esc(r.nome)} — ${_esc(r.classe)} ${_esc(r.sezione)}')">🗑</button></td>
         </tr>`;
       } else {
-        const studenti = (r.studenti||'').split(';').map(s=>s.trim()).filter(Boolean);
+        const studenti = (r.studenti||'').split(/[;,]/).map(s=>s.trim()).filter(Boolean);
         return `<tr id="row-${row}">
           <td>${_esc(r.docente)}<br><span style="color:#94a3b8;font-size:0.75rem;">${_esc(r.email)}</span></td>
           <td>${_esc(r.istituto)}<br><span style="color:#94a3b8;font-size:0.75rem;">${_esc(r.classe)} ${_esc(r.sezione)} — ${_esc(r.ordine)}</span></td>
@@ -3960,29 +3970,31 @@
       let data = {};
       if (tab === 'intenzioni') {
         data = {
-          email:    document.getElementById('ef-email').value.trim(),
-          nome:     document.getElementById('ef-nome').value.trim(),
-          istituto: document.getElementById('ef-istituto').value.trim(),
-          plesso:   document.getElementById('ef-plesso').value.trim(),
-          ordine:   document.getElementById('ef-ordine').value,
-          classe:   document.getElementById('ef-classe').value.trim(),
-          sezione:  document.getElementById('ef-sezione').value.trim(),
-          nSquadre: document.getElementById('ef-nSquadre').value,
-          note:     document.getElementById('ef-note').value.trim()
+          email:          document.getElementById('ef-email').value.trim(),
+          nome_docente:   document.getElementById('ef-nome').value.trim(),
+          istituto:       document.getElementById('ef-istituto').value.trim(),
+          plesso:         document.getElementById('ef-plesso').value.trim(),
+          ordine:         document.getElementById('ef-ordine').value,
+          classe:         document.getElementById('ef-classe').value.trim(),
+          sezione:        document.getElementById('ef-sezione').value.trim(),
+          numero_squadre: document.getElementById('ef-nSquadre').value,
+          note:           document.getElementById('ef-note').value.trim()
         };
         const action = 'modificaIntenzione';
         _doSave(action, row, data, tab, r);
       } else {
+        const studentiArr = document.getElementById('ef-studenti').value.split('\n').map(s=>s.trim()).filter(Boolean);
         data = {
-          email:       document.getElementById('ef-email').value.trim(),
-          docente:     document.getElementById('ef-docente').value.trim(),
-          istituto:    document.getElementById('ef-istituto').value.trim(),
-          plesso:      document.getElementById('ef-plesso').value.trim(),
-          ordine:      document.getElementById('ef-ordine').value,
-          classe:      document.getElementById('ef-classe').value.trim(),
-          sezione:     document.getElementById('ef-sezione').value.trim(),
-          nomeSquadra: document.getElementById('ef-nomeSquadra').value.trim(),
-          studenti:    document.getElementById('ef-studenti').value
+          email:        document.getElementById('ef-email').value.trim(),
+          nome_docente: document.getElementById('ef-docente').value.trim(),
+          istituto:     document.getElementById('ef-istituto').value.trim(),
+          plesso:       document.getElementById('ef-plesso').value.trim(),
+          ordine:       document.getElementById('ef-ordine').value,
+          classe:       document.getElementById('ef-classe').value.trim(),
+          sezione:      document.getElementById('ef-sezione').value.trim(),
+          nome_squadra: document.getElementById('ef-nomeSquadra').value.trim(),
+          studenti:     studentiArr.join(','),
+          n_studenti:   studentiArr.length
         };
         _doSave('modificaIscrizione', row, data, tab, r);
       }
@@ -3998,11 +4010,16 @@
           const lista = _modalData[tab];
           const idx = lista.findIndex(x => x.row === rOld.row);
           if (idx >= 0) {
+            Object.assign(lista[idx], data);
+            // Riallinea gli alias normalizzati usati dal renderer
             if (tab === 'intenzioni') {
-              Object.assign(lista[idx], data);
+              lista[idx].nome = data.nome_docente || lista[idx].nome;
+              lista[idx].docente = data.nome_docente || lista[idx].docente;
+              lista[idx].nSquadre = data.numero_squadre || lista[idx].nSquadre;
             } else {
-              const studentiArr = data.studenti.split('\n').map(s=>s.trim()).filter(Boolean);
-              Object.assign(lista[idx], data, { studenti: studentiArr.join('; '), nStudenti: studentiArr.length });
+              lista[idx].nome = data.nome_docente || lista[idx].nome;
+              lista[idx].docente = data.nome_docente || lista[idx].docente;
+              lista[idx].nomeSquadra = data.nome_squadra || lista[idx].nomeSquadra;
             }
           }
           _cancelEdit();
