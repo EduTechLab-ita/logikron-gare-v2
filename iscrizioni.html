@@ -675,10 +675,18 @@
       })
       .then(result => {
         if (result.error) throw new Error(result.error);
+        const nSq = result.squadre ? result.squadre.length : teams.length;
         document.getElementById('formIscrizioni').classList.add('hidden');
         document.getElementById('successText').textContent =
-          result.nSquadre + ' squadr' + (result.nSquadre === 1 ? 'a iscritta' : 'e iscritte') + ' con successo!';
+          nSq + ' squadr' + (nSq === 1 ? 'a iscritta' : 'e iscritte') + ' con successo!';
         document.getElementById('successMessage').classList.remove('hidden');
+        // V2: fire-and-forget mail di conferma via AS
+        lkApi(LOGIKRON_CONFIG.webAppUrls.admin, {
+          action: 'inviaMailConfermaIscrizione',
+          email: email, nome: nome, istituto: istituto, plesso: plesso,
+          ordine: ordine, classe: classe, sezione: sezione,
+          teamsJson: JSON.stringify(teams)
+        }, 30000).catch(() => {});
       })
       .catch(err => {
         btn.disabled = false;

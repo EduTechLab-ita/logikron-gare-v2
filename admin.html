@@ -1264,6 +1264,7 @@
   <script>
     const ADMIN_PASSWORD = 'logikron2025';
     const API = LOGIKRON_CONFIG.apiUrl;
+    const API_AS = LOGIKRON_CONFIG.webAppUrls.admin;
     const GOOGLE_CLIENT_ID = '212298845224-oqtoa9no5j82rfhm1sjiffjbf14afs7c.apps.googleusercontent.com';
     let adminPwd = '';
     let _intenzioniMail = [];
@@ -1639,11 +1640,24 @@
       const btn = event.target;
       btn.disabled = true;
       btn.textContent = 'Invio in corso...';
-      lkApi(API, { action: 'inviaMailIscrizioni', pwd: adminPwd }, 60000)
+      // V2: prima imposta fase=2 in D1, poi legge docenti da D1, poi invia mail via AS
+      lkApi(API, { action: 'setFase', fase: 2, pwd: adminPwd }, 15000)
+        .then(() => lkApi(API, { action: 'getIntenzioni' }, 15000))
+        .then(r => {
+          const docenti = [];
+          const visti = {};
+          (r || []).forEach(function(row) {
+            if (row.email && !visti[row.email]) {
+              visti[row.email] = true;
+              docenti.push({ email: row.email, nome: row.nome_docente || row.nome || '' });
+            }
+          });
+          return lkApi(API_AS, { action: 'inviaMailIscrizioniList', pwd: adminPwd, docentiJson: JSON.stringify(docenti) }, 60000);
+        })
         .then(r => {
           btn.disabled = false;
           btn.textContent = 'Apri Fase 2 + Invia mail';
-          if (r.error) { alert('Errore: ' + r.error); return; }
+          if (r.error) { alert('Errore invio mail: ' + r.error); aggiornaIndicatoriFase(2); return; }
           alert('✅ Fase 2 aperta!\nEmail inviate: ' + r.inviati + ' / ' + r.totale);
           aggiornaIndicatoriFase(2);
         })
@@ -1978,14 +1992,28 @@
 
       btn.textContent = '📤 Invio...';
 
-      lkApi(API, {
-        action: 'inviaMailFiltrata',
+      // V2: ottieni destinatari da D1, filtra client-side, passa lista ad AS (no Sheets)
+      const _lista = await _caricaIntenzioniMail();
+      const filtrati = filtraDocenti(_lista, filtri);
+      const destinatariMap = {};
+      filtrati.forEach(function(i) {
+        if (i.email && !destinatariMap[i.email])
+          destinatariMap[i.email] = i.nome_docente || i.nome || i.email;
+      });
+      const destinatari = Object.entries(destinatariMap).map(function(kv) {
+        return { email: kv[0], nome: kv[1] };
+      });
+      if (!destinatari.length) {
+        btn.disabled = false;
+        btn.textContent = '📤 Invia comunicazione';
+        alert('Nessun destinatario trovato con i filtri selezionati.');
+        return;
+      }
+
+      lkApi(API_AS, {
+        action: 'inviaMailFiltrataList',
         pwd: adminPwd,
-        filtroEmail:    filtri.email,
-        filtroOrdine:   filtri.ordine,
-        filtroClasse:   filtri.classe,
-        filtroIstituto: filtri.istituto,
-        filtroPlesso:   filtri.plesso,
+        destinatariJson: JSON.stringify(destinatari),
         oggetto: oggetto,
         corpo: corpo,
         allegati:      allegatiIds.length > 0 ? JSON.stringify(allegatiIds) : '',

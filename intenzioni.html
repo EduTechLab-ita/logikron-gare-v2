@@ -350,6 +350,15 @@
           if (result.error) throw new Error(result.error);
           document.getElementById('formIntenzioni').parentElement.classList.add('hidden');
           document.getElementById('successMessage').classList.remove('hidden');
+          // V2: fire-and-forget mail di conferma via AS
+          lkApi(LOGIKRON_CONFIG.webAppUrls.admin, {
+            action: 'inviaMailConfermaIntenzione',
+            email: formData.email, nome: formData.nome,
+            istituto: formData.istituto, plesso: formData.plesso,
+            ordine: formData.ordine, classe: formData.classe,
+            sezione: formData.sezione, numeroSquadre: formData.numeroSquadre,
+            note: formData.note
+          }, 30000).catch(() => {});
         })
         .catch(err => {
           btn.disabled = false;
