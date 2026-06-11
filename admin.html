@@ -2964,6 +2964,23 @@
     let _adminSecLocali = 0; // secondi rimanenti per il tick locale del timer admin
     let _gareMap = {}; // cache garaId → oggetto gara
 
+    // Normalizza i campi snake_case del CF Worker in camelCase usato dalla UI
+    function _normGara(g) {
+      if (!g || g.error) return g;
+      const stato = g.stato === 'bozza' ? 'preparazione' : (g.stato || 'preparazione');
+      return Object.assign({}, g, {
+        id:                  g.id_gara          || g.id,
+        dataGara:            g.data_gara        || g.dataGara        || '',
+        durata:              g.durata_min       || g.durata,
+        numDomande:          g.num_domande      || g.numDomande,
+        puntiIniziali:       g.punti_iniziali   || g.puntiIniziali,
+        tempoJolly:          g.tempo_jolly_min  || g.tempoJolly,
+        tempoDomande:        g.tempo_domande    || g.tempoDomande,
+        minutiNascondimento: g.minuti_nascondimento || g.minutiNascondimento || 5,
+        stato
+      });
+    }
+
     function _buildOptLabel(g) {
       const dataLabel = g.dataGara ? g.dataGara.replace('T', ' ').substring(0, 16) : g.data;
       const prefix = g.stato === 'attiva' ? '🔴 LIVE — ' : '';
@@ -2979,7 +2996,7 @@
         if (!Array.isArray(gare) || gare.length === 0) return;
         document.getElementById('statGare').textContent = gare.length;
         // Ordina per data effettiva decrescente (più recenti in cima)
-        [...gare].sort((a, b) => {
+        [...gare].map(_normGara).sort((a, b) => {
           const ta = new Date(b.dataGara || b.oraFine || b.oraInizio || b.data || 0).getTime();
           const tb = new Date(a.dataGara || a.oraFine || a.oraInizio || a.data || 0).getTime();
           return ta - tb;
@@ -3049,7 +3066,7 @@
       } else {
         lkApi(API, { action: 'getListaGare' }).then(gare => {
           if (!Array.isArray(gare)) return;
-          gare.forEach(g => { _gareMap[g.id] = g; });
+          gare.map(_normGara).forEach(g => { _gareMap[g.id] = g; });
           const gara = _gareMap[garaId];
           if (!gara) {
             document.getElementById('garaLiveStato').innerHTML = '<span style="color:#dc2626;">Gara non trovata</span>';
@@ -3609,7 +3626,7 @@
         .then(r => {
           btn.disabled = false; btn.textContent = '💾 Crea Gara';
           if (r.error) { alert('Errore: ' + r.error); return; }
-          alert('✅ ' + r.message);
+          alert('✅ Gara creata con successo!');
           toggleFormNuovaGara();
           document.getElementById('nomeGara').value = '';
           document.getElementById('dataOraGara').value = '';
@@ -3619,7 +3636,7 @@
             const sel = document.getElementById('selGaraLive');
             sel.innerHTML = '<option value="">-- Seleziona gara --</option>';
             if (!Array.isArray(gare)) return;
-            gare.forEach(g => { _gareMap[g.id] = g; });
+            gare.map(_normGara).forEach(g => { _gareMap[g.id] = g; });
             [...gare].sort((a, b) => {
               const ta = new Date(b.oraFine || b.oraInizio || b.data || 0).getTime();
               const tb = new Date(a.oraFine || a.oraInizio || a.data || 0).getTime();
@@ -3724,6 +3741,7 @@
         .then(function(g) {
           hideWorking();
           if (!g || g.error) { showToast('❌ Impossibile caricare i parametri.', 'errore'); return; }
+          g = _normGara(g);
           // minutiNascondimento è ora per-gara (col 13 del foglio Gare)
           const nascondimento = g.minutiNascondimento || 5;
           _buildModalParamGara(garaId, garaNome || g.nome, g, nascondimento);
