@@ -4170,7 +4170,8 @@
         return;
       }
       tbody.innerHTML = visibili.map(function(r) {
-        const nm = _esc(r.nomeSquadra || '');
+        const nm = _esc(r.nome_squadra || r.nomeSquadra || '');
+        const nStud = r.n_studenti ?? r.nStudenti;
         const ordLabel = String(r.ordine || '').toLowerCase() === 'primaria' ? 'Primaria' :
                          String(r.ordine || '').toLowerCase() === 'secondaria' ? 'Secondaria' :
                          _esc(r.ordine || '');
@@ -4180,7 +4181,7 @@
           '<td style="padding:7px 10px;font-size:0.82rem;color:#475569;">' + _esc(r.istituto || '') + '</td>' +
           '<td style="padding:7px 10px;text-align:center;font-size:0.82rem;color:#334155;">' + ordLabel + '</td>' +
           '<td style="padding:7px 10px;text-align:center;font-size:0.82rem;color:#334155;">' + _esc(String(r.classe || '')) + 'ª</td>' +
-          '<td style="padding:7px 10px;text-align:center;font-size:0.82rem;color:#334155;">' + (r.nStudenti || '—') + '</td>' +
+          '<td style="padding:7px 10px;text-align:center;font-size:0.82rem;color:#334155;">' + (nStud != null ? nStud : '—') + '</td>' +
         '</tr>';
       }).join('');
       _aggiornaCountImporta();
