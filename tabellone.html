@@ -605,7 +605,7 @@
     <div style="font-size:clamp(3rem,10vw,6rem);margin-bottom:0.5rem;">🏁</div>
     <div id="cerTitoloGara" style="font-size:clamp(1.2rem,4vw,2rem);font-weight:700;margin-bottom:0.5rem;opacity:0.8;"></div>
     <div style="font-size:clamp(2rem,7vw,4.5rem);font-weight:900;letter-spacing:-0.02em;margin-bottom:0.5rem;background:linear-gradient(90deg,#fbbf24,#f59e0b,#fcd34d,#f59e0b,#fbbf24);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;animation:shimmer 3s linear infinite;">Gara Terminata!</div>
-    <div style="font-size:clamp(1rem,3vw,1.5rem);opacity:0.75;margin-bottom:2rem;">Rimanete in attesa per i risultati...</div>
+    <div style="font-size:clamp(1rem,3vw,1.5rem);opacity:0.75;margin-bottom:2rem;">La classifica finale sarà svelata al termine della cerimonia.</div>
     <div style="display:flex;gap:0.75rem;justify-content:center;">
       <div style="width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,0.5);animation:pulse 1.4s infinite;"></div>
       <div style="width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,0.5);animation:pulse 1.4s 0.2s infinite;"></div>
@@ -1020,6 +1020,8 @@
       return String(Math.floor(s / 60)).padStart(2,'0') + ':' + String(s % 60).padStart(2,'0');
     }
 
+    let _garaTerminataLocale = false;
+
     function tickTimer() {
       if (secondiLocali > 0) secondiLocali--;
 
@@ -1027,6 +1029,17 @@
       const elT = document.getElementById('timerDisplay');
       elT.textContent = fmt(secondiLocali);
       elT.style.color = secondiLocali <= 60 ? '#fca5a5' : '#fcd34d';
+
+      // Quando il timer locale arriva a 0, mostra subito overlay gara terminata
+      // (il server confermerà a breve; aggiornaCerimonia gestirà la cerimonia vera)
+      if (secondiLocali <= 0 && !_garaTerminataLocale && _cerimoniaRendered < 0) {
+        _garaTerminataLocale = true;
+        if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+        const nomeGara = lastData && lastData.gara ? lastData.gara.nome : '';
+        const el = document.getElementById('cerTitoloGara');
+        if (el) el.textContent = nomeGara;
+        mostraSoloOverlay('overlayCer0');
+      }
 
       // Timer nel pannello nascosto
       const elF = document.getElementById('timerFinale');
