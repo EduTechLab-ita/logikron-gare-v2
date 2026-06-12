@@ -462,6 +462,14 @@
   let _imgDim    = {}; // { name: {w, h} }
   let _imgElCache = {}; // { name: HTMLImageElement } — pronti per drawImage() senza ricaricare
 
+  // ── Drive OAuth (dichiarate qui per evitare TDZ quando init() chiama initDriveAuth()) ──
+  const GOOGLE_CLIENT_ID = '212298845224-oqtoa9no5j82rfhm1sjiffjbf14afs7c.apps.googleusercontent.com';
+  let _driveToken = null;
+  let _driveTokenExpiry = 0;
+  let _driveTokenClient = null;
+  let _attestatiFolderId = null;
+  let _folderIdCache = {};
+
   // ===================== LOGIN =====================
 
   function doLogin() {
@@ -1310,13 +1318,6 @@
   }
 
   // ===================== UPLOAD PDF — Drive API OAuth (diretto, nessun JSONP per i dati) =====================
-
-  const GOOGLE_CLIENT_ID = '212298845224-oqtoa9no5j82rfhm1sjiffjbf14afs7c.apps.googleusercontent.com';
-  let _driveToken = null;
-  let _driveTokenExpiry = 0;
-  let _driveTokenClient = null;
-  let _attestatiFolderId = null;
-  let _folderIdCache = {}; // cache subfolder IDs: "ordine|istituto|plesso|classe" → folderId
 
   function initDriveAuth() {
     // Inizializzato quando GIS è pronto (callback onload dello script GIS)
