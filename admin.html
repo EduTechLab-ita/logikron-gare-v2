@@ -3372,6 +3372,19 @@
     var _cerimoniaCurrent = 0;
     var _cerimoniaLabels  = ['🎉 Mostra Classifica', '🏆 Avvia Podio', '📋 Classifica Completa'];
 
+    function ricalcolaPuntiGara() {
+      const garaId = document.getElementById('selGaraLive').value;
+      if (!garaId) { alert('Seleziona prima una gara.'); return; }
+      if (!confirm('Ricalcola bonus, superbonus e punti totali per tutte le squadre?\n\nNota: i punteggi delle risposte vengono ricostruiti dall\'inizio.')) return;
+      lkApi(API, { action: 'ricalcolaPunti', garaId: garaId, pwd: adminPwd })
+        .then(function(r) {
+          if (r.error) { alert('Errore: ' + r.error); return; }
+          showToast('✅ Punti ricalcolati con successo.', 'ok');
+          caricaLogRisposte();
+        })
+        .catch(function(e) { alert('Errore: ' + e.message); });
+    }
+
     function rivediPodio() {
       const garaId = document.getElementById('selGaraLive').value;
       if (!garaId) return;
@@ -4395,6 +4408,10 @@
         <button id="btnRivediPodio" class="btn" onclick="rivediPodio()"
                 style="display:none;border-color:#a855f7;color:#a855f7;">
           🔄 Rivedi Podio
+        </button>
+        <button class="btn" onclick="ricalcolaPuntiGara()" title="Ricalcola bonus, superbonus e punti totali da zero"
+                style="border-color:#f59e0b;color:#f59e0b;">
+          🔁 Ricalcola Punti
         </button>
       </div>
 

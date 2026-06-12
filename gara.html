@@ -572,7 +572,7 @@
       let cls = 'q-btn';
       if (isJolly)                          cls += ' q-jolly';
       if (r && r.esito === 'corretta')      cls += ' q-answered';
-      else if (r && r.esito === 'sbagliata' && !isJolly) cls += ' q-wrong';
+      else if (r && r.esito === 'sbagliata') cls += ' q-wrong';
       if (num === stato.domandaAttiva)      cls += ' q-selected';
       btn.className = cls;
       btn.innerHTML = isJolly

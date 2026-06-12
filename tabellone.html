@@ -984,7 +984,7 @@
             // Penalità su domanda già corretta: rosso 10s poi verde
             const penalitaDopoCorretta = prevCelle[key] === 'corretta' && esito === 'sbagliata';
             if (penalitaDopoCorretta) {
-              tempRedUntil[key] = Date.now() + 10000;
+              tempRedUntil[key] = Date.now() + 30000;
               delete forceGreen[key];
             }
             if (esitoChanged || penalitaDopoCorretta) {
