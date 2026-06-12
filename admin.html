@@ -2996,7 +2996,8 @@
         if (!Array.isArray(gare) || gare.length === 0) return;
         document.getElementById('statGare').textContent = gare.length;
         // Ordina per data effettiva decrescente (più recenti in cima)
-        [...gare].map(_normGara).sort((a, b) => {
+        const gareNorm = gare.map(_normGara);
+        gareNorm.sort((a, b) => {
           const ta = new Date(b.dataGara || b.oraFine || b.oraInizio || b.data || 0).getTime();
           const tb = new Date(a.dataGara || a.oraFine || a.oraInizio || a.data || 0).getTime();
           return ta - tb;
@@ -3017,7 +3018,7 @@
         }
         // Auto-apri modal SOLO se c'è una gara attiva al caricamento pagina
         if (autoApriAttiva) {
-          const garaAttiva = gare.find(g => g.stato === 'attiva');
+          const garaAttiva = gareNorm.find(g => g.stato === 'attiva');
           if (garaAttiva) {
             sel.value = garaAttiva.id;
             apriModalGaraLive();
@@ -3507,15 +3508,19 @@
             document.getElementById('questitiTableBody').innerHTML = '<tr><td colspan="4" style="padding:0.75rem;text-align:center;color:#94a3b8;">Nessuna domanda</td></tr>';
             return;
           }
-          document.getElementById('questitiTableBody').innerHTML = domande.map(d => `
-            <tr style="border-bottom:1px solid #334155;">
-              <td style="padding:6px 10px;text-align:center;font-weight:700;color:#a5b4fc;">Q${d.num}</td>
-              <td style="padding:6px 10px;color:#cbd5e1;font-size:0.8rem;">${d.testo ? _esc(d.testo) : '<span style="color:#475569;font-style:italic;">—</span>'}</td>
-              <td style="padding:6px 10px;text-align:center;font-family:monospace;font-weight:700;color:#fbbf24;">${_esc(d.rispostaCorretta)}</td>
+          document.getElementById('questitiTableBody').innerHTML = domande.map(d => {
+            const num = d.num_domanda ?? d.num;
+            const risp = d.risposta_corretta ?? d.rispostaCorretta ?? '';
+            const testo = d.testo || '';
+            return `<tr style="border-bottom:1px solid #334155;">
+              <td style="padding:6px 10px;text-align:center;font-weight:700;color:#a5b4fc;">Q${num}</td>
+              <td style="padding:6px 10px;color:#cbd5e1;font-size:0.8rem;">${testo ? _esc(testo) : '<span style="color:#475569;font-style:italic;">—</span>'}</td>
+              <td style="padding:6px 10px;text-align:center;font-family:monospace;font-weight:700;color:#fbbf24;">${_esc(risp)}</td>
               <td style="padding:6px 10px;text-align:center;">
-                <button class="btn-action-sm btn-action-edit" onclick="editDomanda(${d.num},'${_esc(d.rispostaCorretta)}','${_esc(d.testo||'')}')">✏️</button>
+                <button class="btn-action-sm btn-action-edit" onclick="editDomanda(${num},'${_esc(risp)}','${_esc(testo)}')">✏️</button>
               </td>
-            </tr>`).join('');
+            </tr>`;
+          }).join('');
         })
         .catch(() => {});
     }
@@ -3636,8 +3641,9 @@
             const sel = document.getElementById('selGaraLive');
             sel.innerHTML = '<option value="">-- Seleziona gara --</option>';
             if (!Array.isArray(gare)) return;
-            gare.map(_normGara).forEach(g => { _gareMap[g.id] = g; });
-            [...gare].sort((a, b) => {
+            const gareNorm = gare.map(_normGara);
+            gareNorm.forEach(g => { _gareMap[g.id] = g; });
+            [...gareNorm].sort((a, b) => {
               const ta = new Date(b.oraFine || b.oraInizio || b.data || 0).getTime();
               const tb = new Date(a.oraFine || a.oraInizio || a.data || 0).getTime();
               return ta - tb;
