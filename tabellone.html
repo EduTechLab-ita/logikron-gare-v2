@@ -733,7 +733,7 @@
           }
 
           // Aggiorna intestazione colonne e valori
-          aggiornaTestataDomande(data.domande || []);
+          aggiornaTestataDomande(data.domande || [], data.valoreAttuale || {});
 
           // Render corpo tabellone
           renderBody(data.squadre || [], data.griglia || {}, data.domande || []);
@@ -880,17 +880,18 @@
 
     // ==================== RENDER ====================
 
-    function aggiornaTestataDomande(domande) {
+    function aggiornaTestataDomande(domande, valoreAttuale) {
       const n = domande.length;
       if (n < 1) return;
 
-      // Ricostruisce thead dinamicamente in base al numero di domande
+      // domande è array di numeri [1,2,...,n] (da getTabellone)
+      // valoreAttuale è { 1: 24, 2: 22, ... }
       const thead = document.querySelector('#tabelloneTable thead');
       let qTh = '';
       let valTd = '';
       for (let i = 1; i <= n; i++) {
         qTh  += '<th>Q' + i + '</th>';
-        valTd += '<td id="val-' + i + '">20</td>';
+        valTd += '<td id="val-' + i + '">' + ((valoreAttuale && valoreAttuale[i]) || PUNTI_BASE) + '</td>';
       }
       thead.innerHTML =
         '<tr>' +
@@ -904,12 +905,6 @@
           valTd +
           '<td></td>' +
         '</tr>';
-
-      // Aggiorna i valori correnti
-      domande.forEach(d => {
-        const el = document.getElementById('val-' + d.num);
-        if (el) el.textContent = d.valoreAttuale || d.puntiBase || PUNTI_BASE;
-      });
     }
 
     function renderBody(squadre, griglia, domande) {
@@ -927,7 +922,7 @@
         const pos = index + 1;
         const jollyNum = sq.jolly ? parseInt(sq.jolly) : null;
         const posClass = pos === 1 ? 'pos-1' : pos === 2 ? 'pos-2' : pos === 3 ? 'pos-3' : 'pos-other';
-        const sqGriglia = griglia[sq.id] || {};
+        const sqGriglia = sq.griglia || {};
         const sqId = String(sq.id);
         usedIds.add(sqId);
 

@@ -3304,6 +3304,10 @@
               ? '<span class="badge-corretta">✓ corretta</span>'
               : r.esito === 'jolly'
               ? '<span class="badge-jolly-live">⭐ jolly scelto</span>'
+              : r.esito === 'bonus'
+              ? '<span class="badge-jolly-live" style="background:#d97706;">🏅 bonus pos.</span>'
+              : r.esito === 'superbonus'
+              ? '<span class="badge-jolly-live" style="background:#7c3aed;">🏆 superbonus</span>'
               : '<span class="badge-sbagliata">✗ sbagliata</span>';
             const jollyBadge = r.isJolly ? '<span class="badge-jolly-live">⭐ J</span>' : '';
             const puntiColor = r.punti > 0 ? 'color:#065f46;font-weight:700;' : 'color:#991b1b;font-weight:700;';
@@ -3320,7 +3324,9 @@
               '<td style="text-align:center;' + puntiColor + '">' + (r.punti > 0 ? '+' : '') + r.punti + '</td>' +
               '<td style="text-align:center;">' + jollyBadge + '</td>' +
               '<td style="text-align:center;white-space:nowrap;">' +
-                (r.esito === 'jolly'
+                (r.esito === 'bonus' || r.esito === 'superbonus'
+                  ? '<span style="color:var(--lk-text-muted);font-size:0.75rem;">auto</span>'
+                  : r.esito === 'jolly'
                   ? '<button class="btn-action-sm btn-action-edit" title="Cambia quesito jolly" onclick="editJollyLive(\'' + sqId + '\',' + (r.num_domanda ?? r.numDomanda) + ',\'' + sqNomeEsc + '\')">⭐✏️</button>'
                   : '<button class="btn-action-sm btn-action-edit" title="Modifica risposta" onclick="editRispostaLive(\'' + sqId + '\',' + (r.num_domanda ?? r.numDomanda) + ',\'' + r.esito + '\',\'' + rispEsc + '\',\'' + sqNomeEsc + '\')">✏️</button> ' +
                     '<button class="btn-action-sm btn-action-del" title="Elimina risposta" onclick="deleteRispostaLive(\'' + sqId + '\',' + (r.num_domanda ?? r.numDomanda) + ',\'' + sqNomeEsc + '\')">🗑️</button>'
