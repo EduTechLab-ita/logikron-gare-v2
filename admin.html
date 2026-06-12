@@ -3341,7 +3341,7 @@
           });
           var usedKeys = new Set();
 
-          // Ordine cronologico crescente: più vecchie in cima, più recenti in fondo
+          // Più recente in cima: server ritorna DESC, prepend mantiene l'ordine
           risposte.forEach(function(r) {
             var key = 'r_' + (r.id || r.row);
             var html = cellRisposta(r);
@@ -3351,7 +3351,7 @@
               tr = document.createElement('tr');
               tr.dataset.logKey = key;
               tr.innerHTML = html;
-              tbody.appendChild(tr); // nuova riga in fondo
+              tbody.prepend(tr); // nuova riga in cima
             } else if (tr.innerHTML !== html) {
               tr.innerHTML = html; // aggiorna in-place senza spostare
             }
