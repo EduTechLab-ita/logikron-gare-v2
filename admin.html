@@ -1603,7 +1603,7 @@
       lkApi(API, { action: 'eliminaIscrizione', row: row, pwd: adminPwd })
         .then(r => {
           if (r.error) { alert('Errore: ' + r.error); return; }
-          alert('✅ ' + r.message);
+          alert('✅ Iscrizione eliminata con successo.');
           viewIscrizioni(); // ricarica lista (prima chiude, poi riapre)
           viewIscrizioni();
         })
@@ -2233,7 +2233,7 @@
         .then(r => {
           btn.disabled = false; btn.textContent = '🔄 Reset impostazioni da regolamento';
           if (r.error) { alert('Errore: ' + r.error); return; }
-          alert('✅ ' + r.message);
+          alert('✅ ' + (r.aggiornati || '?') + ' parametri reimpostati ai valori di default.');
           caricaConfigParams();
         })
         .catch(err => { btn.disabled = false; btn.textContent = '🔄 Reset impostazioni da regolamento'; alert('Errore: ' + err.message); });
@@ -2294,7 +2294,7 @@
         .then(r => {
           btn.disabled = false; btn.textContent = '📥 Carica 19 IC predefiniti (Ambito 10)';
           if (r.error) { alert('Errore: ' + r.error); return; }
-          alert('✅ ' + r.message);
+          alert('✅ ' + (r.inseriti || '?') + ' IC caricati con successo.');
           caricaIstituti();
         })
         .catch(err => { btn.disabled = false; btn.textContent = '📥 Carica 19 IC predefiniti (Ambito 10)'; alert('Errore: ' + err.message); });
@@ -3197,7 +3197,7 @@
       if (!garaId) return;
       if (!confirm('Assegnare jolly casuale a tutte le squadre senza jolly?')) return;
       lkApi(API, { action: 'assegnaJollyDUfficio', garaId: garaId })
-        .then(r => { if (r.error) { alert('Errore: ' + r.error); return; } alert('✅ ' + r.message); })
+        .then(r => { if (r.error) { alert('Errore: ' + r.error); return; } alert('✅ ' + (r.assegnati || '0') + ' jolly assegnati d\'ufficio.'); })
         .catch(err => alert('Errore: ' + err.message));
     }
 
@@ -3439,7 +3439,7 @@
         .then(r => {
           btn.disabled = false; btn.textContent = 'Salva';
           if (r.error) { alert('Errore: ' + r.error); return; }
-          alert('✅ ' + r.message);
+          alert('✅ Jolly modificato con successo.');
           chiudiModalJolly();
           aggiornaLogRisposte();
         })
@@ -3546,7 +3546,7 @@
         .then(r => {
           btn.disabled = false; btn.textContent = 'Salva';
           if (r.error) { alert('Errore: ' + r.error); return; }
-          alert('✅ ' + r.message);
+          alert('✅ Domanda modificata con successo.');
           chiudiModalModificaDomanda();
           aggiornaQuesiti();
           aggiornaLogRisposte();
@@ -3798,7 +3798,7 @@
       lkApi(API, { action: 'eliminaGara', garaId: sel.value, pwd: adminPwd })
         .then(r => {
           if (r.error) { showToast('❌ Errore: ' + r.error, 'errore'); return; }
-          showToast('✅ ' + r.message, 'ok');
+          showToast('✅ Gara eliminata con successo.', 'ok');
           stopPollingRisposte(); stopTimerGara();
           chiudiModalGaraLive();
           caricaListaGare();
@@ -4204,7 +4204,7 @@
         .then(function(r) {
           btn.disabled = false; btn.textContent = '👥 Importa selezionate';
           if (r.error) { alert('Errore: ' + r.error); return; }
-          alert('✅ ' + r.message);
+          alert('✅ ' + (r.importate || '?') + ' squadre importate nella gara.');
           chiudiModalImporta();
           caricaSquadreGara(garaId);
         })
