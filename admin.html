@@ -3380,7 +3380,7 @@
         .then(function(r) {
           if (r.error) { alert('Errore: ' + r.error); return; }
           showToast('✅ Punti ricalcolati con successo.', 'ok');
-          caricaLogRisposte();
+          aggiornaLogRisposte();
         })
         .catch(function(e) { alert('Errore: ' + e.message); });
     }
