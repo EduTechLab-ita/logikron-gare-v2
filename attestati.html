@@ -1486,15 +1486,11 @@
     const byDocente = {};
     let salvati = 0, errori = 0;
 
-    for (let i = 0; i < lista.length; i++) {
-      const sq = lista[i].sq, nome = lista[i].nome;
-      const pct = Math.round(((i + 1) / lista.length) * 95);
-      const label = '☁️ Drive ' + (i + 1) + '/' + lista.length + ' — ' + nome + '...';
-      document.getElementById('progressBar').style.width = pct + '%';
-      document.getElementById('progressLabel').textContent = label;
-      updateBigProgress(label, pct);
-
-      try {
+    const BATCH = 4;
+    for (let b = 0; b < lista.length; b += BATCH) {
+      const chunk = lista.slice(b, b + BATCH);
+      const results = await Promise.allSettled(chunk.map(async function(item) {
+        const sq = item.sq, nome = item.nome;
         const doc = await generaPDF(sq, nome);
         const pdfBase64 = doc.output('datauristring').split(',')[1];
         const r = await uploadPdfToBackend(pdfBase64, {
@@ -1505,16 +1501,25 @@
           istituto: sq.istituto,
           plesso:   sq.plesso
         });
-        salvati++;
-        const key = sq.email || '_';
-        if (!byDocente[key]) byDocente[key] = { nomeDocente: sq.docente, fileIds: [] };
-        byDocente[key].fileIds.push(r.fileId);
-      } catch(e) {
-        console.error('Errore Drive per', nome, e);
-        errori++;
-        toast('⚠️ Errore per ' + nome + ': ' + e.message);
-      }
-      await new Promise(function(r){ setTimeout(r, 200); });
+        return { sq, nome, fileId: r.fileId };
+      }));
+      results.forEach(function(res) {
+        if (res.status === 'fulfilled') {
+          const { sq, nome, fileId } = res.value;
+          salvati++;
+          const key = sq.email || '_';
+          if (!byDocente[key]) byDocente[key] = { nomeDocente: sq.docente, fileIds: [] };
+          byDocente[key].fileIds.push(fileId);
+        } else {
+          errori++;
+          toast('⚠️ Errore: ' + res.reason.message);
+        }
+      });
+      const pct = Math.round(Math.min((b + BATCH) / lista.length, 1) * 95);
+      const label = '☁️ Drive ' + Math.min(b + BATCH, lista.length) + '/' + lista.length + '...';
+      document.getElementById('progressBar').style.width = pct + '%';
+      document.getElementById('progressLabel').textContent = label;
+      updateBigProgress(label, pct);
     }
 
     // Registra mapping per lo scheduler
@@ -1558,16 +1563,12 @@
     const byDocente = {};
     let salvati = 0, errori = 0;
 
-    // FASE 1: genera PDF + upload Drive
-    for (let i = 0; i < lista.length; i++) {
-      const sq = lista[i].sq, nome = lista[i].nome;
-      const pct1 = Math.round((i / lista.length) * 80);
-      const label1 = '☁️ Drive ' + (i + 1) + '/' + lista.length + ' — ' + nome + '...';
-      document.getElementById('progressBar').style.width = pct1 + '%';
-      document.getElementById('progressLabel').textContent = label1;
-      updateBigProgress(label1, pct1);
-
-      try {
+    // FASE 1: genera PDF + upload Drive (batch paralleli da 4)
+    const BATCH = 4;
+    for (let b = 0; b < lista.length; b += BATCH) {
+      const chunk = lista.slice(b, b + BATCH);
+      const results = await Promise.allSettled(chunk.map(async function(item) {
+        const sq = item.sq, nome = item.nome;
         const doc = await generaPDF(sq, nome);
         const pdfBase64 = doc.output('datauristring').split(',')[1];
         const r = await uploadPdfToBackend(pdfBase64, {
@@ -1578,16 +1579,25 @@
           istituto: sq.istituto,
           plesso:   sq.plesso
         });
-        salvati++;
-        const key = sq.email || '_';
-        if (!byDocente[key]) byDocente[key] = { nomeDocente: sq.docente, fileIds: [] };
-        byDocente[key].fileIds.push(r.fileId);
-      } catch(e) {
-        console.error('Errore Drive per', nome, e);
-        errori++;
-        toast('\u26A0\uFE0F Errore per ' + nome + ': ' + e.message);
-      }
-      await new Promise(function(r){ setTimeout(r, 200); });
+        return { sq, nome, fileId: r.fileId };
+      }));
+      results.forEach(function(res) {
+        if (res.status === 'fulfilled') {
+          const { sq, nome, fileId } = res.value;
+          salvati++;
+          const key = sq.email || '_';
+          if (!byDocente[key]) byDocente[key] = { nomeDocente: sq.docente, fileIds: [] };
+          byDocente[key].fileIds.push(fileId);
+        } else {
+          errori++;
+          toast('\u26A0\uFE0F Errore: ' + res.reason.message);
+        }
+      });
+      const pct1 = Math.round(Math.min((b + BATCH) / lista.length, 1) * 80);
+      const label1 = '☁️ Drive ' + Math.min(b + BATCH, lista.length) + '/' + lista.length + '...';
+      document.getElementById('progressBar').style.width = pct1 + '%';
+      document.getElementById('progressLabel').textContent = label1;
+      updateBigProgress(label1, pct1);
     }
 
     // Fire-and-forget: registra mapping su AttestatiDrive per uso futuro dallo scheduler
