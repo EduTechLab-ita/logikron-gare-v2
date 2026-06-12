@@ -2644,7 +2644,7 @@
         const perOrdine = {}, perClasse = {}, perIC = {};
         iscr.forEach(i => {
           const ord = String(i.ordine || 'N/D'), cl = String(i.classe || '?'),
-                ic = String(i.istituto || 'N/D'), alunni = parseInt(i.nStudenti) || 0;
+                ic = String(i.istituto || 'N/D'), alunni = parseInt(i.n_studenti ?? i.nStudenti) || 0;
           if (!perOrdine[ord]) perOrdine[ord] = { squadre: 0, alunni: 0 };
           perOrdine[ord].squadre++; perOrdine[ord].alunni += alunni;
           const sk = ord.toLowerCase().slice(0,3) + cl.padStart(2,'0');
@@ -3105,8 +3105,11 @@
             return;
           }
           count.textContent = squadre.length;
+          // Costruisce mappa id_squadra → nome per il log risposte
+          _squadreNomeMap = {};
+          squadre.forEach(function(s) { _squadreNomeMap[String(s.id_squadra)] = s.nome_squadra || s.nome || ''; });
           list.innerHTML = squadre.map(function(s) {
-            const nm = String(s.nome || s.codice || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            const nm = String(s.nome_squadra || s.nome || s.codice_accesso || s.codice || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
             return '<span style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;padding:2px 10px;font-size:0.8rem;color:#1e40af;font-weight:600;">' + nm + '</span>';
           }).join('');
         })
@@ -3246,6 +3249,7 @@
     }
 
     var _logGaraId = null; // traccia quale gara è mostrata nel log
+    var _squadreNomeMap = {}; // id_squadra → nome_squadra (aggiornato da caricaSquadreGara)
 
     function aggiornaLogRisposte() {
       const garaId = document.getElementById('selGaraLive').value;
@@ -3303,22 +3307,23 @@
               : '<span class="badge-sbagliata">✗ sbagliata</span>';
             const jollyBadge = r.isJolly ? '<span class="badge-jolly-live">⭐ J</span>' : '';
             const puntiColor = r.punti > 0 ? 'color:#065f46;font-weight:700;' : 'color:#991b1b;font-weight:700;';
-            const sqId    = String(r.squadraId || '').replace(/'/g,"\\'");
-            const sqNome  = String(r.nomeSquadra || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-            const sqNomeEsc = String(r.nomeSquadra || '').replace(/'/g,"\\'");
+            const sqId    = String(r.id_squadra || r.squadraId || '').replace(/'/g,"\\'");
+            const sqNomeRaw = r.nomeSquadra || _squadreNomeMap[String(r.id_squadra || r.squadraId || '')] || '';
+            const sqNome  = String(sqNomeRaw).replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            const sqNomeEsc = String(sqNomeRaw).replace(/'/g,"\\'");
             const rispEsc = String(r.risposta != null ? r.risposta : '').replace(/'/g,"\\'");
             return '<td style="font-variant-numeric:tabular-nums;white-space:nowrap;font-size:0.78rem;">' + ora + '</td>' +
               '<td style="font-weight:600;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + sqNome + '">' + sqNome + '</td>' +
-              '<td style="text-align:center;font-weight:700;color:var(--lk-primary);">Q' + r.numDomanda + '</td>' +
+              '<td style="text-align:center;font-weight:700;color:var(--lk-primary);">Q' + (r.num_domanda ?? r.numDomanda) + '</td>' +
               '<td style="text-align:center;font-family:monospace;font-weight:600;">' + (r.risposta != null ? r.risposta : '—') + '</td>' +
               '<td style="text-align:center;">' + esitoBadge + '</td>' +
               '<td style="text-align:center;' + puntiColor + '">' + (r.punti > 0 ? '+' : '') + r.punti + '</td>' +
               '<td style="text-align:center;">' + jollyBadge + '</td>' +
               '<td style="text-align:center;white-space:nowrap;">' +
                 (r.esito === 'jolly'
-                  ? '<button class="btn-action-sm btn-action-edit" title="Cambia quesito jolly" onclick="editJollyLive(\'' + sqId + '\',' + r.numDomanda + ',\'' + sqNomeEsc + '\')">⭐✏️</button>'
-                  : '<button class="btn-action-sm btn-action-edit" title="Modifica risposta" onclick="editRispostaLive(\'' + sqId + '\',' + r.numDomanda + ',\'' + r.esito + '\',\'' + rispEsc + '\',\'' + sqNomeEsc + '\')">✏️</button> ' +
-                    '<button class="btn-action-sm btn-action-del" title="Elimina risposta" onclick="deleteRispostaLive(\'' + sqId + '\',' + r.numDomanda + ',\'' + sqNomeEsc + '\')">🗑️</button>'
+                  ? '<button class="btn-action-sm btn-action-edit" title="Cambia quesito jolly" onclick="editJollyLive(\'' + sqId + '\',' + (r.num_domanda ?? r.numDomanda) + ',\'' + sqNomeEsc + '\')">⭐✏️</button>'
+                  : '<button class="btn-action-sm btn-action-edit" title="Modifica risposta" onclick="editRispostaLive(\'' + sqId + '\',' + (r.num_domanda ?? r.numDomanda) + ',\'' + r.esito + '\',\'' + rispEsc + '\',\'' + sqNomeEsc + '\')">✏️</button> ' +
+                    '<button class="btn-action-sm btn-action-del" title="Elimina risposta" onclick="deleteRispostaLive(\'' + sqId + '\',' + (r.num_domanda ?? r.numDomanda) + ',\'' + sqNomeEsc + '\')">🗑️</button>'
                 ) +
               '</td>';
           }
@@ -3332,7 +3337,7 @@
 
           // Itera al contrario: più recente prima → prepend mette l'ultima risposta in cima
           risposte.slice().reverse().forEach(function(r) {
-            var key = 'r_' + r.row;
+            var key = 'r_' + (r.id || r.row);
             var html = cellRisposta(r);
             usedKeys.add(key);
             var tr = existingRows[key];
