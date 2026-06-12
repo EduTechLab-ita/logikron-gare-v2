@@ -203,8 +203,8 @@
         </div>
         <div class="form-group">
           <label>Anno Scolastico</label>
-          <input id="annoScolastico" class="form-input" readonly
-                 value="" style="opacity:0.6;">
+          <input id="annoScolastico" class="form-input"
+                 value="" placeholder="es. 2025/2026">
         </div>
       </div>
       <div class="form-row" style="margin-bottom:1rem;">
@@ -476,6 +476,7 @@
     adminPwd = ADMIN_PASSWORD;
     document.getElementById('loginPanel').style.display = 'none';
     document.getElementById('mainPanel').style.display = 'block';
+    init();
   }
 
   // ===================== INIT =====================
@@ -546,21 +547,24 @@
       .then(function(gare) {
         const sel = document.getElementById('selGara');
         sel.innerHTML = '<option value="">— Seleziona gara —</option>';
-        // Mostra prima le gare terminate
+        // Mostra prima le gare concluse
         gare.sort(function(a,b) {
-          const ord = { terminata:0, attiva:1, creata:2 };
-          return (ord[a.stato]??9) - (ord[b.stato]??9) || (b.oraFine||'').localeCompare(a.oraFine||'');
+          const ord = { conclusa:0, attiva:1, preparazione:2, bozza:3 };
+          const oraA = a.ora_fine || a.oraFine || '';
+          const oraB = b.ora_fine || b.oraFine || '';
+          return (ord[a.stato]??9) - (ord[b.stato]??9) || oraB.localeCompare(oraA);
         });
         gare.forEach(function(g) {
           const opt = document.createElement('option');
-          opt.value = g.id;
-          const stato = g.stato === 'terminata' ? '✅' : g.stato === 'attiva' ? '🔴' : '⚪';
-          opt.textContent = stato + ' ' + g.nome + (g.oraFine ? ' (' + g.oraFine.substring(0,10) + ')' : '');
+          opt.value = g.id_gara || g.id;
+          const oraFine = g.ora_fine || g.oraFine || '';
+          const stato = g.stato === 'conclusa' ? '✅' : g.stato === 'attiva' ? '🔴' : '⚪';
+          opt.textContent = stato + ' ' + g.nome + (oraFine ? ' (' + oraFine.substring(0,10) + ')' : '');
           sel.appendChild(opt);
         });
-        // Auto-seleziona prima terminata
-        const prima = gare.find(function(g){ return g.stato === 'terminata'; });
-        if (prima) { sel.value = prima.id; onGaraChange(); }
+        // Auto-seleziona prima conclusa
+        const prima = gare.find(function(g){ return g.stato === 'conclusa'; });
+        if (prima) { sel.value = prima.id_gara || prima.id; onGaraChange(); }
       })
       .catch(function(e){ toast('Errore carica gare: ' + e.message); });
   }
@@ -603,18 +607,20 @@
         return;
       }
 
-      // Mappa iscrizioni per nome squadra
+      // Mappa iscrizioni per nome squadra (CF Worker ritorna snake_case)
       const iscMap = {};
-      (iscrizioni || []).forEach(function(isc) {
-        iscMap[isc.nomeSquadra] = isc;
+      (Array.isArray(iscrizioni) ? iscrizioni : []).forEach(function(isc) {
+        const nome = isc.nome_squadra || isc.nomeSquadra || '';
+        if (nome) iscMap[nome] = isc;
       });
 
       // Costruisce dati attestati (squadre già ordinate per punti)
       _datiAttest = tabellone.squadre.map(function(sq, idx) {
         const isc = iscMap[sq.nome] || {};
-        const studenti = typeof isc.studenti === 'string'
-          ? isc.studenti.split(';').map(function(s){ return s.trim(); }).filter(Boolean)
-          : [];
+        const studentiRaw = isc.studenti || isc.alunni || '';
+        const studenti = typeof studentiRaw === 'string'
+          ? studentiRaw.split(',').map(function(s){ return s.trim(); }).filter(Boolean)
+          : Array.isArray(studentiRaw) ? studentiRaw : [];
         return {
           squadra:   sq.nome,
           posizione: idx + 1,
@@ -625,7 +631,7 @@
           ordine:    isc.ordine   || '',
           classe:    isc.classe   || '',
           sezione:   isc.sezione  || '',
-          docente:   isc.docente  || '',
+          docente:   isc.nome_docente || isc.docente || '',
           email:     isc.email    || '',
           alunni:    studenti
         };
