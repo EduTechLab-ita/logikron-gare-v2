@@ -3341,8 +3341,8 @@
           });
           var usedKeys = new Set();
 
-          // Itera al contrario: più recente prima → prepend mette l'ultima risposta in cima
-          risposte.slice().reverse().forEach(function(r) {
+          // Ordine cronologico crescente: più vecchie in cima, più recenti in fondo
+          risposte.forEach(function(r) {
             var key = 'r_' + (r.id || r.row);
             var html = cellRisposta(r);
             usedKeys.add(key);
@@ -3351,9 +3351,9 @@
               tr = document.createElement('tr');
               tr.dataset.logKey = key;
               tr.innerHTML = html;
-              tbody.prepend(tr); // nuova riga in cima
+              tbody.appendChild(tr); // nuova riga in fondo
             } else if (tr.innerHTML !== html) {
-              tr.innerHTML = html; // aggiorna solo se cambiato, senza spostare
+              tr.innerHTML = html; // aggiorna in-place senza spostare
             }
           });
 
