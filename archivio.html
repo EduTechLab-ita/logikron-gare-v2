@@ -254,7 +254,7 @@
     }
 
     function renderListaGare(gare) {
-      const concluse = gare.filter(g => g.stato === 'conclusa');
+      const concluse = gare.filter(g => g.stato === 'terminata' || g.stato === 'conclusa');
 
       if (concluse.length === 0) {
         document.getElementById('listaGare').innerHTML = `
