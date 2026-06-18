@@ -178,9 +178,9 @@
 
     function renderClassifica(container, data) {
       const squadre = data.squadre || [];
-      const griglia  = data.griglia  || {};
-      const domande  = data.domande  || [];
+      const domande  = data.domande  || [];   // array di numeri domanda
       const numDom   = domande.length || 10;
+      const valori   = data.valoreAttuale || {};
 
       if (squadre.length === 0) {
         container.innerHTML = '<p class="text-muted" style="padding:0.5rem;">Nessuna squadra registrata.</p>';
@@ -193,8 +193,8 @@
       html += '<th>Istituto</th>';
       html += '<th style="text-align:right; min-width:60px;">Punti</th>';
       for (let n = 1; n <= numDom; n++) {
-        const dom = domande[n - 1];
-        const base = dom && (dom.valore || dom.puntiBase) ? (dom.valore || dom.puntiBase) : '';
+        const numDom = domande[n - 1];
+        const base = valori[numDom] ? valori[numDom] : '';
         html += '<th style="text-align:center; min-width:48px; font-size:0.78rem; padding:0.3rem 0.2rem;">';
         html += 'D.' + n;
         if (base) html += '<br><span style="font-weight:400; opacity:0.75; font-size:0.7rem;">' + base + '</span>';
@@ -205,7 +205,7 @@
       squadre.forEach((sq, idx) => {
         const pos = idx + 1;
         const rowClass = pos <= 3 ? ' class="pos-' + pos + '"' : '';
-        const sqGriglia = griglia[sq.id] || {};
+        const sqGriglia = sq.griglia || {};
 
         html += '<tr' + rowClass + '>';
         html += '<td style="text-align:center;">' + medaglia(pos) + '</td>';
@@ -270,8 +270,8 @@
       // Ordina per data effettiva decrescente (più recenti prima)
       // usa oraFine (più precisa), poi dataGara, poi data come fallback
       concluse.sort((a, b) => {
-        const ta = new Date(b.oraFine || b.dataGara || b.data || 0).getTime();
-        const tb = new Date(a.oraFine || a.dataGara || a.data || 0).getTime();
+        const ta = new Date(b.ora_fine || b.data_gara || b.data || 0).getTime();
+        const tb = new Date(a.ora_fine || a.data_gara || a.data || 0).getTime();
         return ta - tb;
       });
 
@@ -282,17 +282,17 @@
             <div class="gara-header">
               <div>
                 <strong style="font-size:1rem;">${gara.nome}</strong>
-                <div class="gara-meta">${formatData(gara.data)} &bull; ${gara.numDomande} quesiti &bull; ${gara.durata} min</div>
+                <div class="gara-meta">${formatData(gara.data)} &bull; ${gara.num_domande} quesiti &bull; ${gara.durata_min} min</div>
               </div>
               <div style="display:flex; align-items:center; gap:0.75rem;">
                 <span class="gara-badge">Conclusa</span>
                 <button class="btn btn-outline btn-classifica"
-                        onclick="toggleClassifica('${gara.id}', this)">
+                        onclick="toggleClassifica('${gara.id_gara}', this)">
                   Vedi Classifica
                 </button>
               </div>
             </div>
-            <div id="classifica-${gara.id}" class="classifica-container"></div>
+            <div id="classifica-${gara.id_gara}" class="classifica-container"></div>
           </div>
         `;
       });
