@@ -195,6 +195,11 @@ const LOGIKRON_CONFIG = {
   },
 
   // ==========================================
+  // VERSIONE APP (aggiornare ad ogni deploy)
+  // ==========================================
+  appVersion: 'v5.28',
+
+  // ==========================================
   // ADMIN
   // ==========================================
   admin: {
@@ -211,3 +216,19 @@ const LOGIKRON_CONFIG = {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = LOGIKRON_CONFIG;
 }
+
+// Auto-inietta la versione in tutti i footer con class="lk-version"
+(function () {
+  function _lkInjectVersion() {
+    var v = LOGIKRON_CONFIG.appVersion;
+    var spans = document.querySelectorAll('.lk-version');
+    for (var i = 0; i < spans.length; i++) {
+      spans[i].textContent = v;
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _lkInjectVersion);
+  } else {
+    _lkInjectVersion();
+  }
+})();
